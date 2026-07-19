@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REST — Webの設計思想 | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="アーキテクチャスタイルとしてのREST、6つの制約、統一インターフェース、REST APIの実例と成熟度モデルまでを初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html" aria-current="page">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item hl">設計思想 = REST</span>
+</div>
+
+<h1>REST — Webの設計思想</h1>
+
+<p class="lead">
+URI・HTTP・HTMLは、ダウンロードしたり実装したりできる「実物のある技術」でした。
+このページで学ぶ<strong>REST</strong>だけは性質が違います。RESTは技術そのものではなく、
+「それらをどう組み合わせると良いシステムになるか」という<strong>設計の考え方</strong>です。
+Web APIの世界で「REST API」「RESTful」という言葉が飛び交う理由も、ここを押さえるとすっきり分かります。
+書籍『Webを支える技術』第1部(第3章)と、本全体を貫くテーマに対応する、本サイトの要のページです。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#not-a-thing">RESTは「モノ」ではなく「考え方」</a></li>
+    <li><a href="#resource">リソース指向 — RESTの名前の意味</a></li>
+    <li><a href="#constraints">RESTを構成する6つの制約</a></li>
+    <li><a href="#uniform-interface">統一インターフェース — RESTの心臓部</a></li>
+    <li><a href="#example">REST APIの実例 — ユーザ管理APIの5往復</a></li>
+    <li><a href="#restful">RESTfulとは・REST成熟度モデル</a></li>
+    <li><a href="#why">なぜRESTだとうまくいくのか</a></li>
+    <li><a href="#other-styles">最新動向: RESTと他スタイルの比較</a></li>
+  </ol>
+</div>
+
+<section id="not-a-thing">
+<h2>RESTは「モノ」ではなく「考え方」</h2>
+
+<p>
+HTTPには仕様書があり、HTMLはファイルとして保存できます。しかしRESTは、
+ダウンロードもインストールもできません。RESTとは、<strong>Roy Fielding(ロイ・フィールディング)が
+2000年の博士論文で発表した、Webの設計原則の整理</strong>だからです。
+Fieldingは、爆発的に成功しつつあったWebを観察し、「なぜWebはこれほどうまくいっているのか」を
+理論としてまとめました。それがRESTです。
+</p>
+
+<p>
+RESTのような「考え方」を、専門用語で<strong>アーキテクチャスタイル(architectural style、設計の型・様式)</strong>と呼びます。
+</p>
+
+<div class="analogy">
+<p>建築の世界には「和風建築」「洋風建築」といった<strong>様式</strong>があります。
+様式は特定の家そのものではなく、「屋根はこう作る」「柱はこう配置する」という設計の方針の集まりです。
+同じ和風建築でも、建つ家は一軒一軒違いますね。
+RESTも同じで、<strong>RESTという様式に沿って設計された個別のシステム(家)が、世界中のWebサービスやWeb API</strong>なのです。</p>
+</div>
+
+<div class="point">
+<p>順序に注意してください。RESTが先にあってWebが作られたのではなく、
+<strong>先に成功したWebがあり、その成功の理由を後から理論化したものがREST</strong>です(→ <a href="web.html">Webとはのページ</a>)。
+だからRESTを学ぶことは「Webがうまくいっている理由」を学ぶことと同じです。</p>
+</div>
+</section>
+
+<section id="resource">
+<h2>リソース指向 — RESTの名前の意味</h2>
+
+<p>
+RESTの世界では、Web上のあらゆる情報を<strong>リソース(resource)</strong>と捉えます。
+ユーザのプロフィール、今日の天気、商品の在庫、ブログ記事——「名前を付けて指し示せる情報」はすべてリソースです。
+そして次の2つを組み合わせて扱います。
+</p>
+
+<ol class="flow">
+  <li><span class="flow-title">リソースにURIで名前を付ける</span>
+    <span class="flow-desc">例: ユーザ123というリソースに <code>https://api.example.com/users/123</code> という世界で一意な住所を与える。→ <a href="uri.html">URIのページ</a></span></li>
+  <li><span class="flow-title">リソースの「表現」をやりとりする</span>
+    <span class="flow-desc">リソースそのものは概念なので、ネットワーク上を流れるのはその<strong>表現(representation)</strong>——具体的にはHTMLやJSONなどのデータ。→ <a href="html.html">HTMLのページ</a></span></li>
+</ol>
+
+<p>
+ここでRESTという名前の意味が分かります。RESTは <strong>REpresentational State Transfer</strong> の略で、
+直訳すると「<strong>表現による状態の転送</strong>」。
+「リソースの状態(いまの中身)を、表現(HTMLやJSON)という形にして、クライアントとサーバの間で転送し合う」——
+Webのやりとりの本質を、そのまま名前にしたものです。
+</p>
+
+<div class="note">
+<p>同じリソースが複数の表現を持てる点も重要です。同じユーザ123でも、
+ブラウザにはHTML、プログラムにはJSONを返せます(→ <a href="index.html#site-vs-api">全体像ページの実例</a>)。
+「リソース(概念)」と「表現(実際のデータ)」の区別は、書籍『Webを支える技術』でも繰り返し強調される考え方です。</p>
+</div>
+</section>
+
+<section id="constraints">
+<h2>RESTを構成する6つの制約</h2>
+
+<p>
+Fieldingは、RESTを<strong>6つの制約(constraint、設計上の縛り)の組み合わせ</strong>として定義しました。
+「縛り」と聞くと窮屈そうですが、逆です。全員が同じ縛りを守るからこそ、
+世界中のバラバラなコンピュータが協調できます。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>制約</th><th>どういうことか</th><th>それで何が嬉しいか</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>クライアント/サーバ</td>
+      <td>画面(クライアント)とデータ処理(サーバ)の役割を分離する。</td>
+      <td>それぞれ独立に開発・改良できる。同じサーバをブラウザ・スマホアプリ・他のプログラムが共有できる。</td>
+    </tr>
+    <tr>
+      <td>ステートレス</td>
+      <td>サーバはクライアントの状態を覚えず、毎回のリクエストに必要な情報をすべて含める(→ <a href="http.html">HTTPのページ</a>)。</td>
+      <td>サーバを何台にも増やせる(どのサーバが受けても同じ)。障害からの復帰も簡単。</td>
+    </tr>
+    <tr>
+      <td>キャッシュ</td>
+      <td>一度取得したレスポンスを、クライアントや中継サーバが再利用してよい。</td>
+      <td>通信が減って速くなる。サーバの負荷が下がる。</td>
+    </tr>
+    <tr>
+      <td>統一インターフェース</td>
+      <td>すべてのリソースを、限られた共通のメソッドだけで操作する(次のセクションで詳述)。</td>
+      <td>初めて見るAPIでも操作方法を推測できる。ブラウザや中継機器が「意味」を理解して協調できる。</td>
+    </tr>
+    <tr>
+      <td>階層化システム</td>
+      <td>クライアントとサーバの間に、プロキシ(中継サーバ)やロードバランサ(負荷分散装置)を挟んでよい。</td>
+      <td>キャッシュや負荷分散を後付けできる。クライアントは相手が本物のサーバか中継かを気にしなくてよい。</td>
+    </tr>
+    <tr>
+      <td>コードオンデマンド(任意)</td>
+      <td>サーバからプログラムコード(現在は主にJavaScript)を送り、クライアント側で実行できる。</td>
+      <td>クライアントの機能を後から拡張できる。6つの中で唯一「採用してもしなくてもよい」制約。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>6つの制約をすべて(コードオンデマンドは任意で)満たすアーキテクチャスタイルがRESTです。
+どれも派手な発明ではなく、「分離する」「覚えない」「共通化する」という地味な約束事の積み重ねである点に注目してください。</p>
+</div>
+</section>
+
+<section id="uniform-interface">
+<h2>統一インターフェース — RESTの心臓部</h2>
+
+<p>
+6つの制約の中で最もRESTらしいのが<strong>統一インターフェース(uniform interface)</strong>です。
+意味は「<strong>限られたメソッド(GET/POST/PUT/DELETEなど)だけを使い、あらゆるリソースを同じ作法で操作する</strong>」こと。
+リソースごとに独自の命令を発明するのではなく、どのリソースに対しても
+「取得はGET、作成はPOST、更新はPUT、削除はDELETE」という共通の型で通します。
+</p>
+
+<p>
+この4操作は、データ管理の基本操作<strong>CRUD(クラッド: Create/Read/Update/Delete)</strong>ときれいに対応します。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>CRUD</th><th>意味</th><th>HTTPメソッド</th><th>ユーザ管理APIでの例</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Create</td><td>作成</td><td><code>POST</code>(または <code>PUT</code>)</td><td><code>POST /users</code> — ユーザを新規作成</td></tr>
+    <tr><td>Read</td><td>読み取り</td><td><code>GET</code></td><td><code>GET /users/123</code> — ユーザ123を取得</td></tr>
+    <tr><td>Update</td><td>更新</td><td><code>PUT</code></td><td><code>PUT /users/123</code> — ユーザ123を書き換え</td></tr>
+    <tr><td>Delete</td><td>削除</td><td><code>DELETE</code></td><td><code>DELETE /users/123</code> — ユーザ123を削除</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="point">
+<p>操作の種類をむやみに増やさない——この不自由さこそがRESTの強さです。
+メソッドの意味が世界共通だから、<strong>初めて見るAPIでも「一覧はたぶん <code>GET /users</code> だろう」と推測でき</strong>、
+ブラウザ・プロキシ・検索エンジンといった第三者のソフトウェアも「GETなら安全に読めるはず」と判断して協調できます。
+各メソッドの正確な性質(安全性・冪等性)は <a href="http.html">HTTPのページ</a>で扱っています。</p>
+</div>
+</section>
+
+<section id="example">
+<h2>REST APIの実例 — ユーザ管理APIの5往復</h2>
+
+<p>
+理屈がそろったので、実物を見ましょう。架空のユーザ管理API(<code>api.example.com</code>)に対する
+基本の5往復です。<strong>URIがリソースを指し、メソッドが操作を表し、JSONが表現として流れる</strong>——
+ここまでの話がすべて詰まっています。
+</p>
+
+<h3>① 一覧の取得 — GET /users</h3>
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト</p>
+<pre class="req"><code>GET /users HTTP/1.1
+Host: api.example.com
+Accept: application/json</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(200 OK)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "users": [
+    { "id": 101, "name": "田中太郎" },
+    { "id": 123, "name": "佐藤花子" }
+  ]
+}</code></pre>
+</div>
+</div>
+
+<h3>② 個別の取得 — GET /users/123</h3>
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト</p>
+<pre class="req"><code>GET /users/123 HTTP/1.1
+Host: api.example.com
+Accept: application/json</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(200 OK)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "id": 123,
+  "name": "佐藤花子",
+  "email": "hanako@example.com",
+  "joined": "2024-04-01"
+}</code></pre>
+</div>
+</div>
+
+<h3>③ 作成 — POST /users</h3>
+
+<p>作成に成功すると、ステータスコード <code>201 Created</code> と、
+<strong>新しく生まれたリソースのURIを示す <code>Location</code> ヘッダ</strong>が返ります。</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(ボディに作成内容)</p>
+<pre class="req"><code>POST /users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "鈴木一郎",
+  "email": "ichiro@example.com"
+}</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(201 Created + Location)</p>
+<pre class="res"><code>HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Location: https://api.example.com/users/124
+
+{
+  "id": 124,
+  "name": "鈴木一郎",
+  "email": "ichiro@example.com",
+  "joined": "2026-07-19"
+}</code></pre>
+</div>
+</div>
+
+<h3>④ 更新 — PUT /users/124</h3>
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(新しい内容で置き換え)</p>
+<pre class="req"><code>PUT /users/124 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "鈴木一郎",
+  "email": "ichiro-new@example.com"
+}</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(200 OK)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "id": 124,
+  "name": "鈴木一郎",
+  "email": "ichiro-new@example.com",
+  "joined": "2026-07-19"
+}</code></pre>
+</div>
+</div>
+
+<h3>⑤ 削除 — DELETE /users/124</h3>
+
+<p>削除に成功すると、「成功したが返す中身はない」を意味する <code>204 No Content</code> が返ります(ボディは空)。</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト</p>
+<pre class="req"><code>DELETE /users/124 HTTP/1.1
+Host: api.example.com</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(204 No Content)</p>
+<pre class="res"><code>HTTP/1.1 204 No Content</code></pre>
+</div>
+</div>
+
+<h3>エラーのとき — 404 Not Found</h3>
+
+<p>存在しないリソースを指定すると、エラーもまた統一された作法(ステータスコード)で返ります。</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(存在しないID)</p>
+<pre class="req"><code>GET /users/999 HTTP/1.1
+Host: api.example.com
+Accept: application/json</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(404 Not Found)</p>
+<pre class="res"><code>HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=utf-8
+
+{
+  "error": "user_not_found",
+  "message": "ID 999 のユーザは存在しません"
+}</code></pre>
+</div>
+</div>
+
+<div class="point">
+<p>5往復すべてで、<strong>URI(名詞)は同じ形、操作の違いはメソッド(動詞)だけ、結果はステータスコード</strong>で表現されています。
+この規則正しさがREST APIの読みやすさの正体です。
+ステータスコードの体系は <a href="http.html">HTTPのページ</a>、URIの設計指針は <a href="api-design.html">API設計のページ</a>で詳しく扱います。</p>
+</div>
+</section>
+
+<section id="restful">
+<h2>RESTfulとは・REST成熟度モデル</h2>
+
+<p>
+<strong>RESTful(レストフル)</strong>とは、「RESTの原則に沿っている」ことを表す形容詞です。
+「RESTfulなAPI」と言えば、リソースにURIを付け、統一インターフェースで操作する設計になっているAPI、という意味です。
+ただし現実のAPIには「どこまでRESTの原則に従っているか」の程度差があります。
+その度合いを測る物差しとして有名なのが、Leonard Richardson(レナード・リチャードソン)の<strong>成熟度モデル</strong>です。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>レベル</th><th>特徴</th><th>ようすの例</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>レベル0</td>
+      <td>HTTPをただの通り道として使う。1つのURIに何でもPOSTで送る。</td>
+      <td><code>POST /api</code> にボディで「getUserしてください」と書く。</td>
+    </tr>
+    <tr>
+      <td>レベル1</td>
+      <td>リソースごとにURIを分ける。</td>
+      <td><code>/users/123</code> や <code>/orders/7</code> が登場する。ただし操作はまだ何でもPOST。</td>
+    </tr>
+    <tr>
+      <td>レベル2</td>
+      <td>HTTPメソッドとステータスコードを正しく使い分ける。<strong>現実の多くの「REST API」はここ。</strong></td>
+      <td><code>GET /users/123</code> が200、作成は <code>POST</code> で201、失敗は404や400。</td>
+    </tr>
+    <tr>
+      <td>レベル3</td>
+      <td>HATEOAS — レスポンスに「次に辿れるリンク」を含める。</td>
+      <td>ユーザ情報の中に、注文一覧へのリンクが入っている(下の例)。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+レベル3の<strong>HATEOAS(Hypermedia As The Engine Of Application State)</strong>は、
+「レスポンス自身が次に進める先のリンクを教えてくれる」仕組みです。
+ハイパーリンクを辿って進むWebサイトの体験(→ <a href="html.html">HTMLのページ</a>)を、APIの世界でも実現しようという発想です。
+</p>
+
+<p class="code-caption">HATEOAS形式のレスポンスの例(リンクを含むJSON)</p>
+<pre><code>{
+  "id": 123,
+  "name": "佐藤花子",
+  "_links": {
+    "self":   { "href": "/users/123" },
+    "orders": { "href": "/users/123/orders" },
+    "posts":  { "href": "/users/123/posts" }
+  }
+}</code></pre>
+
+<div class="note">
+<p>実務では、HATEOASまで実装するAPIは少数派で、<strong>レベル2が事実上の標準</strong>です。
+「REST API」と名乗るAPIのほとんどは「リソースのURI + メソッドとステータスコードの正しい使い分け」を指している、
+と理解しておくと現場の会話とずれません。</p>
+</div>
+</section>
+
+<section id="why">
+<h2>なぜRESTだとうまくいくのか</h2>
+
+<p>制約を守ると何が起きるのか、効果の面からまとめ直します。</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">初見でも推測が効く</p>
+    <p>統一インターフェースのおかげで、初めて使うAPIでも「一覧は <code>GET /xxx</code>、作成は <code>POST /xxx</code>」と当たりを付けられる。学習コストが激減する。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">サーバを並べられる</p>
+    <p>ステートレスだから、リクエストをどのサーバが処理しても同じ。アクセスが増えたらサーバを足すだけでよい。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">キャッシュが効く</p>
+    <p>「GETは安全に再利用できる」と決まっているから、結果を保存して使い回せる。速くて安いWebの土台。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">既存インフラに乗れる</p>
+    <p>階層化システムのおかげで、CDN(世界中に配置されたキャッシュ網)やプロキシなど、Webのために整備済みのインフラをそのまま利用できる。</p>
+  </div>
+</div>
+
+<div class="point">
+<p>ひとことで言えば、RESTに従うことは<strong>「Webがうまくいった理由の再利用」</strong>です。
+Webサイトを30年支えてきた仕組み(URI・HTTP・キャッシュ・リンク)にAPIも乗せてしまえば、
+同じスケーラビリティ(拡張性)と安定性が手に入る——これがREST APIが世界標準になった理由です。</p>
+</div>
+</section>
+
+<section id="other-styles">
+<h2>最新動向: RESTと他スタイルの比較</h2>
+
+<div class="modern">
+<p>書籍刊行(2010年)後、REST以外のAPIスタイルも実用化されました。それぞれ得意分野が違います。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>スタイル</th><th>ひとことで言うと</th><th>得意分野・使い所</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>REST(+ JSON)</td>
+      <td>リソースをURIとHTTPメソッドで操作する</td>
+      <td>公開Web API全般。シンプルでキャッシュが効き、HTTPの道具がそのまま使える。</td>
+    </tr>
+    <tr>
+      <td>GraphQL</td>
+      <td>クライアントがクエリ(問い合わせ文)を書き、必要なデータだけをまとめて取る</td>
+      <td>画面ごとに必要なデータの形が違うアプリ。取得の過不足(取りすぎ・往復しすぎ)を減らしたいとき。</td>
+    </tr>
+    <tr>
+      <td>gRPC</td>
+      <td>関数呼び出しのように相手のサーバの処理を呼ぶ、高速なバイナリ通信</td>
+      <td>データセンター内部のサービス間(マイクロサービス)の高速通信。人間が直接読む用途には不向き。</td>
+    </tr>
+    <tr>
+      <td>RPCスタイル</td>
+      <td>「命令名+引数」を送る古典的な形(成熟度モデルのレベル0に相当)</td>
+      <td>操作が「リソースの取得・更新」に整理しづらい、手続き中心の社内APIなど。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>使い分けが進んだ現在でも、<strong>不特定多数に公開するWeb APIの「共通語」は依然としてRESTスタイル + JSON</strong>です。
+GraphQLもgRPCもHTTPの上で動いており、URI・HTTP・表現という土台の理解(つまり本サイトの内容)は
+どのスタイルを選んでも必要になります。</p>
+</div>
+
+<p>
+次の <a href="ajax.html">Ajaxのページ</a>では、ブラウザの中のJavaScriptがこうしたAPIを呼ぶ仕組みを、
+その次の <a href="api-design.html">API設計のページ</a>では、RESTの原則を実際のAPI設計に落とし込む手順を学びます。
+</p>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="html.html"><span class="nav-dir">前のページ</span>HTML — リソースの表現とハイパーメディア</a>
+  <a class="next" href="ajax.html"><span class="nav-dir">次のページ</span>Ajax — JavaScriptがHTTPを使う仕組み</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajax — JavaScriptがHTTPを使う仕組み | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="Ajaxの動作原理、fetch APIによるGET/POSTの実例、XMLHttpRequestの歴史、CORSまで、JavaScriptがHTTPを使う仕組みを初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html" aria-current="page">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item hl">転送 = HTTP</span>
+  <span class="mm-item hl">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>Ajax — JavaScriptがHTTPを使う仕組み</h1>
+
+<p class="lead">
+ここまで、ブラウザが<a href="http.html">HTTP</a>で<a href="html.html">HTML</a>を受け取る流れを学びました。
+このページの主役は、その通信を<strong>JavaScriptが自分で行う仕組み = Ajax(エイジャックス)</strong>です。
+検索の候補が打つそばから出てくるのも、地図がスルスル動くのも、裏でAjaxが働いています。
+新しいプロトコルが登場するわけではありません。<strong>使うのはこれまで学んだHTTPそのもの</strong>です。
+「fetchのコード」と「実際に流れるHTTPメッセージ」を対応させながら見ていきます。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#traditional-vs-ajax">従来のWebとAjaxの違い</a></li>
+    <li><a href="#how-it-works">Ajaxの動作原理 — 4つのステップ</a></li>
+    <li><a href="#suggest-example">実例: 検索サジェストの裏側</a></li>
+    <li><a href="#fetch">コードで見るAjax — fetch API</a></li>
+    <li><a href="#post-json">POSTでデータを送る — コードとHTTPメッセージの対応</a></li>
+    <li><a href="#xhr">XMLHttpRequestという歴史</a></li>
+    <li><a href="#cors">CORS — なぜ別ドメインへのAjaxは制限されるのか</a></li>
+    <li><a href="#modern-spa">SPAへ — 現在のWebアプリの構図</a></li>
+  </ol>
+</div>
+
+<section id="traditional-vs-ajax">
+<h2>従来のWebとAjaxの違い</h2>
+
+<p>
+従来のWebでは、リンクをクリックするたび、フォームを送信するたびに、
+ブラウザは<strong>画面全体を新しいHTMLで丸ごと置き換え</strong>ていました。
+Ajaxでは、JavaScriptが裏でHTTPリクエストを送り、返ってきたデータで<strong>画面の一部だけ</strong>を書き換えます。
+</p>
+
+<h3>従来のWeb — 1クリックごとに全画面リロード</h3>
+<ol class="flow">
+  <li><span class="flow-title">ユーザがリンクやフォーム送信ボタンを押す</span>
+    <span class="flow-desc">現在のページはここでいったん役目を終える。</span></li>
+  <li><span class="flow-title">ブラウザがHTTPリクエストを送る</span>
+    <span class="flow-desc">画面は白くなり、ユーザは待つ。</span></li>
+  <li><span class="flow-title">サーバがページ全体のHTMLを返す</span>
+    <span class="flow-desc">変わらない部分(ヘッダやメニュー)も毎回まるごと作り直して送る。</span></li>
+  <li><span class="flow-title">ブラウザが画面全体を描画し直す</span>
+    <span class="flow-desc">スクロール位置も入力途中の内容もリセットされる。</span></li>
+</ol>
+
+<h3>Ajax — 裏で通信して一部だけ更新</h3>
+<ol class="flow">
+  <li><span class="flow-title">ユーザが操作する(文字を打つ、ボタンを押す)</span>
+    <span class="flow-desc">ページはそのまま表示され続ける。</span></li>
+  <li><span class="flow-title">JavaScriptが裏でHTTPリクエストを送る</span>
+    <span class="flow-desc">画面は固まらず、ユーザは操作を続けられる。</span></li>
+  <li><span class="flow-title">サーバが必要なデータだけ(主にJSON)を返す</span>
+    <span class="flow-desc">ページ全体ではなく「候補リスト」「新着3件」など差分だけ。転送量が小さい。</span></li>
+  <li><span class="flow-title">JavaScriptが画面の該当部分だけを書き換える</span>
+    <span class="flow-desc">ユーザには「ページの中身がぬるっと変わった」ように見える。</span></li>
+</ol>
+
+<p>
+Ajaxが世界の注目を集めたのは2005年ごろ。地図を切れ目なくドラッグできるGoogle マップと、
+入力のたびに候補が出る検索サジェストが「ページ遷移のないWeb」の衝撃を広め、
+この手法にAjaxという名前が付きました(→ <a href="web.html#history">Webの歴史</a>)。
+</p>
+
+<div class="analogy">
+<p>従来のWebは「注文のたびに店員が新しいお膳を丸ごと運び直す定食屋」、
+Ajaxは「追加の小鉢だけをさっと持ってきてくれる店」です。
+運ぶ量が減るので速く、食事(ユーザの操作)も中断されません。</p>
+</div>
+</section>
+
+<section id="how-it-works">
+<h2>Ajaxの動作原理 — 4つのステップ</h2>
+
+<p>
+Ajaxは <strong>Asynchronous JavaScript + XML</strong>(非同期のJavaScriptとXML)の略です。
+名前にXMLとありますが、現在やりとりされるデータは<strong>JSONが主流</strong>で、名前だけが当時のまま残っています。
+鍵になるのは「非同期(asynchronous)」——<strong>通信の結果を待たずに画面が動き続ける</strong>という性質です。
+</p>
+
+<ol class="flow">
+  <li><span class="flow-title">イベント発生</span>
+    <span class="flow-desc">「文字が入力された」「ボタンが押された」「ページを下までスクロールした」などをJavaScriptが検知する。</span></li>
+  <li><span class="flow-title">JavaScriptがHTTPリクエストを送信(非同期)</span>
+    <span class="flow-desc">送信後も画面は固まらない。ユーザは入力やスクロールを続けられる。</span></li>
+  <li><span class="flow-title">サーバがレスポンス(主にJSON)を返す</span>
+    <span class="flow-desc">中身はこれまで学んだ普通の<a href="http.html">HTTPレスポンス</a>。表現がHTMLでなくJSONなだけ。</span></li>
+  <li><span class="flow-title">JavaScriptがDOMを書き換える</span>
+    <span class="flow-desc">受け取ったデータをもとに、画面の必要な部分だけを更新する。</span></li>
+</ol>
+
+<p>
+ステップ4に出てきた<strong>DOM(Document Object Model)</strong>は、
+ブラウザが読み込んだHTMLを<strong>JavaScriptから操作できるようにした仕組み</strong>です。
+HTMLの各タグが「オブジェクト」としてツリー状に並んでおり、
+JavaScriptはそれを探して(<code>document.querySelector</code>)、中身を書き換えられます(<code>textContent</code> など)。
+DOMを書き換えると、ブラウザは即座に画面へ反映します。
+</p>
+
+<div class="point">
+<p>Ajaxは魔法ではありません。やっていることは
+<strong>「URIに向かってHTTPリクエストを送り、表現(JSON)を受け取る」というWebの基本動作そのもの</strong>です。
+違いは、それを行うのがブラウザ本体ではなくJavaScriptで、結果の反映先がページ全体ではなくDOMの一部だ、という点だけです。</p>
+</div>
+</section>
+
+<section id="suggest-example">
+<h2>実例: 検索サジェストの裏側</h2>
+
+<p>
+検索ボックスに「とう」と打った瞬間、候補がすっと表示される——あの裏側を見てみましょう。
+JavaScriptが入力を検知して、こんなHTTPリクエストを送っています。
+</p>
+
+<p class="code-caption req">JavaScriptが送るHTTPリクエスト(「とう」は%表記に変換されて運ばれる)</p>
+<pre class="req"><code>GET /api/suggest?q=%E3%81%A8%E3%81%86 HTTP/1.1
+Host: www.example.com
+Accept: application/json</code></pre>
+
+<p>
+URIの <code>?q=...</code> はクエリパラメータ(検索条件などをURIに付け足す仕組み → <a href="uri.html">URIのページ</a>)。
+「とう」がパーセントエンコーディングされて <code>%E3%81%A8%E3%81%86</code> になっています。
+サーバは候補の一覧をJSONで返します。
+</p>
+
+<p class="code-caption res">サーバが返すHTTPレスポンス</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "query": "とう",
+  "suggestions": ["東京 天気", "豆腐 レシピ", "登山 初心者"]
+}</code></pre>
+
+<p>
+JavaScriptはこの配列を受け取り、候補リストのDOMを書き換えます。
+1文字打つごとにこの往復が繰り返されています。ページ遷移が起きないので、ユーザは入力を続けられるのです。
+</p>
+</section>
+
+<section id="fetch">
+<h2>コードで見るAjax — fetch API</h2>
+
+<p>
+現在のAjaxの標準的な書き方が<strong>fetch API</strong>です。
+<code>fetch</code>(取ってくる)という名前のとおり、URIを指定してHTTPリクエストを送る関数で、
+すべてのモダンブラウザに組み込まれています。
+ユーザ情報を取得して画面に表示する完全な例です。
+</p>
+
+<p class="code-caption">fetchでGETし、結果をDOMに反映する(async/await構文)</p>
+<pre><code>async function loadUser() {
+  // ① URIを指定してHTTPリクエストを送り、レスポンスを待つ
+  const response = await fetch("https://api.example.com/users/123", {
+    headers: { "Accept": "application/json" }
+  });
+
+  // ② ステータスコードが成功(200番台)かを確認する
+  if (!response.ok) {
+    throw new Error("HTTPエラー: " + response.status);
+  }
+
+  // ③ レスポンスボディのJSONをJavaScriptのオブジェクトに変換する
+  const user = await response.json();
+
+  // ④ DOMを書き換えて画面に反映する
+  document.querySelector("#user-name").textContent = user.name;
+}
+
+loadUser();</code></pre>
+
+<p>各行の意味を確認しましょう。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>コード</th><th>していること</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>async function</code> / <code>await</code></td>
+      <td>「非同期処理」を待つための構文。<code>await</code> は通信の完了を待つが、<strong>その間もブラウザ全体は動き続ける</strong>。</td>
+    </tr>
+    <tr>
+      <td><code>fetch(URI, 設定)</code></td>
+      <td>HTTPリクエストを送信する。メソッドを省略するとGETになる。第2引数でヘッダなどを指定できる。</td>
+    </tr>
+    <tr>
+      <td><code>response.ok</code></td>
+      <td>ステータスコードが200〜299なら <code>true</code>。<strong>fetchは404や500でもエラーにならない</strong>ので、自分で確認する必要がある。</td>
+    </tr>
+    <tr>
+      <td><code>response.status</code></td>
+      <td><a href="http.html">ステータスコード</a>の数値(200、404など)。</td>
+    </tr>
+    <tr>
+      <td><code>response.json()</code></td>
+      <td>レスポンスボディをJSONとして解釈し、JavaScriptのオブジェクトに変換する。</td>
+    </tr>
+    <tr>
+      <td><code>document.querySelector(...)</code></td>
+      <td>DOMから要素を探す。<code>"#user-name"</code> は「idがuser-nameの要素」の意味。<code>textContent</code> への代入で表示が変わる。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="warn">
+<p><code>response.ok</code> の確認を忘れると、サーバが404(見つからない)や500(サーバ内部エラー)を返しても
+処理が先へ進み、壊れたデータで画面を更新しようとして分かりにくいバグになります。
+「通信できたか」と「成功したか」は別物です。必ずステータスを確認しましょう。</p>
+</div>
+</section>
+
+<section id="post-json">
+<h2>POSTでデータを送る — コードとHTTPメッセージの対応</h2>
+
+<p>
+取得(GET)の次は送信です。新しいユーザを登録する例で、
+<strong>fetchのコードが実際にどんなHTTPメッセージになるのか</strong>を突き合わせます。
+ここがこのページの肝です。
+</p>
+
+<p class="code-caption">fetchでJSONをPOSTする</p>
+<pre><code>async function createUser() {
+  const response = await fetch("https://api.example.com/users", {
+    method: "POST",                                   // HTTPメソッドをPOSTに
+    headers: { "Content-Type": "application/json" },  // ボディの形式を宣言
+    body: JSON.stringify({                            // オブジェクトをJSON文字列に変換
+      name: "佐藤花子",
+      email: "hanako@example.com"
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("登録に失敗しました: " + response.status);
+  }
+
+  const created = await response.json();
+  console.log("登録されたID:", created.id);
+}</code></pre>
+
+<p>このコードを実行したとき、ネットワーク上を実際に流れるのは次のHTTPメッセージです。</p>
+
+<p class="code-caption req">実際に流れるHTTPリクエスト</p>
+<pre class="req"><code>POST /users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Content-Length: 52
+
+{"name":"佐藤花子","email":"hanako@example.com"}</code></pre>
+
+<p class="code-caption res">サーバが返すHTTPレスポンス(201 Created = 作成成功)</p>
+<pre class="res"><code>HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Location: https://api.example.com/users/124
+
+{"id":124,"name":"佐藤花子","email":"hanako@example.com"}</code></pre>
+
+<p>コードとメッセージの対応関係を整理します。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>fetchのコード</th><th>HTTPメッセージ上の姿</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>fetch("https://api.example.com/users", ...)</code></td>
+      <td>リクエスト行のURI <code>/users</code> と <code>Host: api.example.com</code></td>
+    </tr>
+    <tr>
+      <td><code>method: "POST"</code></td>
+      <td>リクエスト行の <code>POST</code></td>
+    </tr>
+    <tr>
+      <td><code>headers: { "Content-Type": ... }</code></td>
+      <td><code>Content-Type: application/json</code> ヘッダ</td>
+    </tr>
+    <tr>
+      <td><code>body: JSON.stringify({...})</code></td>
+      <td>空行の下のボディ <code>{"name":"佐藤花子",...}</code></td>
+    </tr>
+    <tr>
+      <td><code>response.status</code> / <code>response.ok</code></td>
+      <td>ステータス行の <code>201 Created</code></td>
+    </tr>
+    <tr>
+      <td><code>response.json()</code></td>
+      <td>レスポンスボディのJSONを解釈した結果</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="point">
+<p>fetchのコードは、<a href="http.html">HTTPのページ</a>で学んだリクエストの部品
+(メソッド・URI・ヘッダ・ボディ)を<strong>そのままJavaScriptの引数に写し取ったもの</strong>です。
+つまりfetchを理解するのに新しい知識はほぼ不要で、HTTPが分かっていれば読めます。
+逆に言えば、Ajaxのトラブルはブラウザの開発者ツールで「実際に流れたHTTPメッセージ」を見れば解決できます。</p>
+</div>
+</section>
+
+<section id="xhr">
+<h2>XMLHttpRequestという歴史</h2>
+
+<p>
+fetchが普及する前、Ajaxの通信は<strong>XMLHttpRequest(XHR)</strong>という仕組みで書かれていました。
+名前に「XML」とあるのはAjaxの名前と同じ歴史的事情です。同じGETをXHRで書くとこうなります。
+</p>
+
+<p class="code-caption">かつての書き方 — XMLHttpRequest(参考)</p>
+<pre><code>var xhr = new XMLHttpRequest();
+xhr.open("GET", "https://api.example.com/users/123");
+xhr.onreadystatechange = function () {
+  if (xhr.readyState === 4 &amp;&amp; xhr.status === 200) {
+    var user = JSON.parse(xhr.responseText);
+    document.querySelector("#user-name").textContent = user.name;
+  }
+};
+xhr.send();</code></pre>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>XMLHttpRequest</th><th>fetch API</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>登場時期</td>
+      <td>1999年ごろ(2005年のAjaxブームの立役者)</td>
+      <td>2015年ごろから標準化・普及</td>
+    </tr>
+    <tr>
+      <td>書き方</td>
+      <td>コールバック関数(完了時に呼ばれる関数)を登録する</td>
+      <td>async/awaitで上から下へ読める</td>
+    </tr>
+    <tr>
+      <td>JSONの扱い</td>
+      <td><code>JSON.parse</code> を自分で呼ぶ</td>
+      <td><code>response.json()</code> が用意されている</td>
+    </tr>
+    <tr>
+      <td>現在の位置づけ</td>
+      <td>古いコードや記事で見かける遺産</td>
+      <td><strong>現在の標準</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+XHRを紹介したのは、<strong>Web上の古い記事やコードを読むときに必ず出会う</strong>からです。
+どちらも「JavaScriptからHTTPリクエストを送る」という中身は同じ。
+<strong>新しく書くコードはfetch一択</strong>と覚えてください。
+</p>
+</section>
+
+<section id="cors">
+<h2>CORS — なぜ別ドメインへのAjaxは制限されるのか</h2>
+
+<p>
+Ajaxを試すと、かなりの確率で
+「<code>blocked by CORS policy</code>」というエラーに出会います。正体を知っておきましょう。
+</p>
+
+<p>
+ブラウザには<strong>同一オリジンポリシー</strong>という安全ルールがあります。
+オリジン(origin)とは「URIのスキーム+ホスト+ポート」のこと(例: <code>https://shop.example.jp</code>)。
+JavaScriptによるAjax通信は、原則<strong>ページ自身と同じオリジンにしか許されません</strong>。
+これがないと、悪意あるサイトを開いただけで、そのページのJavaScriptがあなたのログイン済みの
+別サービスへ勝手にリクエストを送り、情報を盗めてしまうからです。
+</p>
+
+<p>
+とはいえ「自社サイトから自社APIサーバ(別オリジン)を呼びたい」という正当な場面は多くあります。
+そこで作られたのが<strong>CORS(オリジン間リソース共有、Cross-Origin Resource Sharing)</strong>——
+<strong>サーバ側が「このオリジンからなら許可する」と表明する仕組み</strong>です。ヘッダの往復を見てみましょう。
+</p>
+
+<p class="code-caption req">shop.example.jp のページ上のJavaScriptが api.example.com へ送るリクエスト</p>
+<pre class="req"><code>GET /v1/products HTTP/1.1
+Host: api.example.com
+Origin: https://shop.example.jp
+Accept: application/json</code></pre>
+
+<p class="code-caption res">サーバの許可付きレスポンス</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json
+Access-Control-Allow-Origin: https://shop.example.jp
+
+[{"id": 1, "name": "コーヒー豆 200g"}]</code></pre>
+
+<ol class="flow">
+  <li><span class="flow-title">ブラウザが <code>Origin</code> ヘッダを自動で付ける</span>
+    <span class="flow-desc">「このリクエストは https://shop.example.jp のページから発生しました」という申告。JavaScriptからは偽装できない。</span></li>
+  <li><span class="flow-title">サーバが <code>Access-Control-Allow-Origin</code> で応答する</span>
+    <span class="flow-desc">「そのオリジンからのアクセスを許可します」という表明。</span></li>
+  <li><span class="flow-title">ブラウザが照合し、許可がなければJavaScriptに結果を渡さない</span>
+    <span class="flow-desc">このときコンソールに出るのが「blocked by CORS policy」エラー。</span></li>
+</ol>
+
+<div class="warn">
+<p>CORSエラーは「通信の故障」ではなく、<strong>サーバが許可を表明していないことをブラウザが検知した</strong>状態です。
+直す場所はJavaScript側ではなく、<strong>サーバ側の設定(許可ヘッダを返すこと)</strong>が基本です。
+なお、データを書き換えるようなリクエストでは、ブラウザが本番の前にOPTIONSメソッドで
+「送ってもよいか」を確認する<strong>プリフライトリクエスト</strong>という事前確認も行われます。</p>
+</div>
+</section>
+
+<section id="modern-spa">
+<h2>SPAへ — 現在のWebアプリの構図</h2>
+
+<div class="modern">
+<p><strong>Ajaxの徹底がSPAを生みました。</strong>
+一部だけの更新を突き詰め、<strong>最初の1回だけHTMLとJavaScriptを受け取り、
+以後の画面遷移をすべてJavaScriptが担う</strong>方式を
+SPA(シングルページアプリケーション)と呼びます。サーバとの会話は「Web API + JSON」だけになり、
+ReactやVueなどのフレームワークが「JSONの変化に合わせてDOMを効率よく書き換える」部分を引き受けています。
+Webメールや業務システムなど、現在の「アプリらしいWeb」はほぼこの構図です。</p>
+<p><strong>SSRとハイドレーション。</strong>
+SPAは初回表示が遅くなりがちなので、最初のHTMLはサーバ側で組み立てて返し(SSR、サーバサイドレンダリング)、
+その後にJavaScriptが引き継ぐ「ハイドレーション」という折衷も一般化しています。</p>
+<p><strong>サーバから送る通信も。</strong>
+HTTPは<a href="web.html#distributed">クライアントから始まる</a>のが原則ですが、
+チャットや通知のように「サーバから知らせたい」場面のために、
+WebSocket(双方向の常時接続)やSSE(Server-Sent Events、サーバからの逐次送信)という仕組みも使われています。
+これらはAjaxの補完であり、日常のデータ取得・送信は今もHTTP + JSONが主役です。</p>
+</div>
+
+<div class="note">
+<p>ここまでで「JavaScriptがWeb APIを呼ぶ」側の仕組みが分かりました。
+次のページでは視点をサーバ側に移し、<strong>呼ばれるWeb APIをどう設計するか</strong>
+(URIの付け方、メソッドとステータスコードの選び方)を学びます。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="rest.html"><span class="nav-dir">前のページ</span>REST — Webの設計思想</a>
+  <a class="next" href="api-design.html"><span class="nav-dir">次のページ</span>API設計 — Web APIを設計する</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

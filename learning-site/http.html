@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="HTTPのリクエストとレスポンス、メソッド、ステータスコード、ヘッダ、ステートレス性、キャッシュ、HTTPSまでを生のメッセージ例とともに初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html" aria-current="page">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item hl">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>HTTP — Webの配送プロトコル</h1>
+
+<p class="lead">
+HTTP(HyperText Transfer Protocol)は、<a href="uri.html">URI</a>で示された住所とデータをやりとりするための
+<strong>通信の手順(プロトコル)</strong>で、Webの三本柱のうち「転送」を担当します。
+ブラウザの閲覧も、スマホアプリの通信も、Web APIの呼び出しも、すべてこのHTTPの上で動いています。
+このページはサイトの中核です。生のHTTPメッセージをたくさん読みながら、
+メソッド・ステータスコード・ヘッダ・ステートレス性という4つの柱を身につけましょう。
+書籍『Webを支える技術』第3部「HTTP」に対応する内容です。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#layers">HTTPはどこにいるのか</a></li>
+    <li><a href="#req-res">リクエストとレスポンス</a></li>
+    <li><a href="#methods">HTTPメソッド</a></li>
+    <li><a href="#status">ステータスコード</a></li>
+    <li><a href="#headers">HTTPヘッダ</a></li>
+    <li><a href="#stateless">ステートレス性</a></li>
+    <li><a href="#cache">キャッシュと条件付きGET</a></li>
+    <li><a href="#https">HTTPS — 暗号化されたHTTP</a></li>
+    <li><a href="#versions">HTTPのバージョンの歴史</a></li>
+    <li><a href="#try">手元で確認するには</a></li>
+  </ol>
+</div>
+
+<section id="layers">
+<h2>HTTPはどこにいるのか</h2>
+
+<p>
+まず位置の確認です。インターネットの通信は<strong>TCP/IP</strong>という階層構造で整理されており、
+HTTPはその<strong>いちばん上のアプリケーション層</strong>にいます。
+下の層ほど「土台」に近く、上の層ほど「アプリの都合」に近くなります。
+</p>
+
+<div class="stack">
+  <div class="layer hl">
+    <span class="layer-role">アプリケーション層</span>
+    <span class="layer-tech">HTTP</span>
+    <span class="layer-desc">「このURIのリソースをください/保存してください」というアプリケーションの会話。メールのSMTPやDNSも同じ層の仲間。</span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">トランスポート層</span>
+    <span class="layer-tech">TCP</span>
+    <span class="layer-desc">データを欠け・重複・順序の乱れなく相手のプログラムまで確実に届ける。ポート番号で窓口を区別する。</span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">インターネット層</span>
+    <span class="layer-tech">IP</span>
+    <span class="layer-desc">IPアドレスを頼りに、パケット(データの小包)を世界中のネットワーク越しに宛先のコンピュータまで運ぶ。</span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">ネットワークインターフェース層</span>
+    <span class="layer-tech">イーサネット / Wi-Fi など</span>
+    <span class="layer-desc">ケーブルや電波で、隣接する機器まで物理的に信号を届ける。</span>
+  </div>
+</div>
+
+<p>
+つまり<strong>HTTPは、TCP/IPという配送インフラの上に乗ったアプリケーション層のプロトコル</strong>です。
+HTTP自身は「確実に届ける」仕事を下の層に任せ、
+「何を依頼し、どう応答するか」という会話のルールに専念しています。
+この割り切りのおかげで、HTTPの仕様はシンプルに保たれています。
+</p>
+
+<div class="note">
+<p>下の層の詳細(IPアドレスの割り当てやTCPの再送制御など)はネットワークの専門書の領域なので、
+本サイトでは深入りしません。「HTTPは土台の上の会話ルール」という位置づけだけつかめば十分です。</p>
+</div>
+</section>
+
+<section id="req-res">
+<h2>リクエストとレスポンス</h2>
+
+<p>
+<a href="web.html">Webとはのページ</a>で見たとおり、HTTPの通信は必ず
+<strong>クライアントがリクエスト(依頼)を送り、サーバがレスポンス(応答)を返す</strong>という1往復で行われます。
+やりとりされるメッセージは、実はただのテキストで、構造も決まっています。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">リクエストメッセージ</p>
+    <p>① リクエストライン(メソッド + パス + バージョン)<br>
+    ② ヘッダ(付加情報。複数行)<br>
+    ③ 空行(区切り)<br>
+    ④ ボディ(送るデータ本体。無いことも多い)</p>
+  </div>
+  <div class="card">
+    <p class="card-title">レスポンスメッセージ</p>
+    <p>① ステータスライン(バージョン + コード + 説明句)<br>
+    ② ヘッダ(付加情報。複数行)<br>
+    ③ 空行(区切り)<br>
+    ④ ボディ(返すデータ本体。HTMLやJSONなど)</p>
+  </div>
+</div>
+
+<h3>実例① GET — リソースを取得する</h3>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(クライアント → サーバ)</p>
+<pre class="req"><code>GET /users/123 HTTP/1.1
+Host: www.example.com
+Accept: text/html
+User-Agent: Mozilla/5.0 ...</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(サーバ → クライアント)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 87
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;body&gt;&lt;h1&gt;佐藤花子&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div>
+</div>
+
+<p>
+リクエストの1行目「<code>GET /users/123 HTTP/1.1</code>」がリクエストラインです。
+「<strong>GETという方法で、/users/123 というリソースを、HTTP/1.1の作法でください</strong>」と読みます。
+レスポンスの1行目「<code>HTTP/1.1 200 OK</code>」がステータスラインで、「成功しました」という結果報告です。
+</p>
+
+<h3>実例② POST — データを送信する(フォーム送信)</h3>
+
+<p>ログインフォームや検索フォームの「送信ボタン」を押すと、こんなリクエストが飛びます。</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(フォームの内容をボディに載せて送る)</p>
+<pre class="req"><code>POST /search HTTP/1.1
+Host: www.example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 28
+
+q=%E5%AF%BF%E5%8F%B8&amp;lang=ja</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(検索結果のページ)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;body&gt;&lt;h1&gt;「寿司」の検索結果&lt;/h1&gt;...&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div>
+</div>
+
+<p>
+GETと違い、POSTでは空行の下に<strong>ボディ</strong>があります。
+<code>application/x-www-form-urlencoded</code> は「フォームの入力値を
+<code>名前=値&amp;名前=値</code> の形式で送ります」という宣言で、
+値の日本語は<a href="uri.html#encoding">%エンコーディング</a>されています(<code>%E5%AF%BF%E5%8F%B8</code> = 寿司)。
+</p>
+
+<div class="point">
+<p>HTTPメッセージは<strong>人間が読めるただのテキスト</strong>です。
+そして構造は「1行目(何をしたいか/どうなったか)+ ヘッダ(付加情報)+ 空行 + ボディ(データ本体)」——これだけです。
+この単純さこそが、あらゆる言語・あらゆる機器がHTTPを実装できた理由です。
+以降の節はすべて、この構造のどこかの部品(メソッド、ステータスコード、ヘッダ)の話にすぎません。</p>
+</div>
+</section>
+
+<section id="methods">
+<h2>HTTPメソッド</h2>
+
+<p>
+リクエストラインの先頭に書く<strong>メソッド</strong>は、「リソースをどうしたいか」を表す動詞です。
+種類は驚くほど少なく、主要なものは次の7つだけです。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>メソッド</th><th>役割</th><th>例</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>GET</td><td>リソースの取得</td><td>ページを見る、APIでデータを読む</td></tr>
+    <tr><td>POST</td><td>子リソースの作成、データの追加、その他の処理</td><td>新規投稿、フォーム送信、注文の確定</td></tr>
+    <tr><td>PUT</td><td>リソースの更新(丸ごと置き換え)、作成</td><td>プロフィール全体を新しい内容で置き換える</td></tr>
+    <tr><td>DELETE</td><td>リソースの削除</td><td>投稿を削除する</td></tr>
+    <tr><td>PATCH</td><td>リソースの部分的な更新</td><td>プロフィールのうちメールアドレスだけ変える</td></tr>
+    <tr><td>HEAD</td><td>ヘッダのみ取得(ボディなしのGET)</td><td>ファイルの更新日時やサイズだけ確認する</td></tr>
+    <tr><td>OPTIONS</td><td>そのリソースが受け付けるメソッドの問い合わせ</td><td>APIが対応する操作の確認(CORSでも利用)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="analogy">
+<p>メソッドは宅配便の「伝票の種別」です。「お届け(POST)」「集荷(GET)」「差し替え(PUT)」「回収(DELETE)」——
+種別が数種類に統一されているから、配送網のどの拠点(サーバやプログラム)でも同じように処理できます。
+書籍はこれを「<strong>統一インターフェース</strong>」と呼び、Webの成功の鍵として強調しています。→ <a href="rest.html">RESTのページ</a></p>
+</div>
+
+<h3>安全性と冪等性 — メソッドの「性格」</h3>
+
+<p>書籍第3部の重要トピックが、メソッドの2つの性質です。</p>
+
+<ul>
+  <li><strong>安全性(safe)</strong> — 実行しても<strong>リソースの状態を変化させない</strong>こと。安全なメソッドは何回呼んでも、誰が呼んでも、サーバ上のデータは変わりません。</li>
+  <li><strong>冪等性(べきとうせい、idempotence)</strong> — <strong>何回実行しても結果が同じ</strong>であること。1回実行しても100回実行しても、サーバは同じ状態に落ち着きます。</li>
+</ul>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>メソッド</th><th>安全</th><th>冪等</th><th>理由</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>GET / HEAD / OPTIONS</td><td>○</td><td>○</td><td>読むだけなので状態を変えない。変えないので何回でも同じ。</td></tr>
+    <tr><td>PUT</td><td>×</td><td>○</td><td>状態は変えるが、「この内容にする」という指定なので、2回実行しても同じ内容になるだけ。</td></tr>
+    <tr><td>DELETE</td><td>×</td><td>○</td><td>2回削除しても「無い」という同じ状態に落ち着く。</td></tr>
+    <tr><td>POST</td><td>×</td><td>×</td><td>2回実行すると投稿や注文が2件できてしまう。</td></tr>
+    <tr><td>PATCH</td><td>×</td><td>×(保証なし)</td><td>差分の与え方によっては繰り返すたびに結果が変わりうる。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+この性質は実務に直結します。通信が途中で失敗したとき、<strong>冪等なメソッドは安心して再送(リトライ)できます</strong>が、
+POSTの再送は二重注文の危険があるため慎重な設計が必要です。
+「注文ボタンを2回押さないでください」という画面表示の裏には、この冪等性の問題があるのです。
+</p>
+
+<h3>GETとPOSTの使い分け(初級者向けの目安)</h3>
+
+<ul>
+  <li><strong>見るだけ・検索するだけ → GET</strong>。URIに条件が入るのでブックマークや共有ができ、キャッシュも効きます。</li>
+  <li><strong>データを作る・変える・送る → POST</strong>(APIでは更新にPUT/PATCH、削除にDELETEも)。パスワードなどをURIに残さない意味でもPOSTを使います。</li>
+</ul>
+
+<div class="warn">
+<p>「GETなら安全」はサーバ側が守るべき約束でもあります。
+GETで届いたリクエストで削除などの副作用を起こす設計は厳禁です。
+検索エンジンのクローラ(リンクを機械的にたどるプログラム)がGETでアクセスしただけで
+データが消える——という事故が実際に起きています。</p>
+</div>
+</section>
+
+<section id="status">
+<h2>ステータスコード</h2>
+
+<p>
+レスポンスの1行目に入る3桁の数字が<strong>ステータスコード</strong>で、処理の結果を表します。
+まず覚えるべきは<strong>先頭の数字による5分類</strong>です。先頭さえ見れば、知らないコードでも大意がつかめます。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>分類</th><th>意味</th><th>ざっくり言うと</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1xx</td><td>処理中(情報)</td><td>「受け付けました、続けてください」。日常ではほぼ見ない。</td></tr>
+    <tr><td>2xx</td><td>成功</td><td>「できました」</td></tr>
+    <tr><td>3xx</td><td>リダイレクト</td><td>「別の場所を見てください」</td></tr>
+    <tr><td>4xx</td><td>クライアントエラー</td><td>「あなたの依頼がおかしいです」(リクエストを直せば解決)</td></tr>
+    <tr><td>5xx</td><td>サーバエラー</td><td>「こちらの失敗です」(サーバ側が直るのを待つ)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>代表的なコード</h3>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>コード</th><th>名前</th><th>意味と使いどころ</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>200</td><td>OK</td><td>成功。ボディに結果が入る。</td></tr>
+    <tr><td>201</td><td>Created</td><td>リソースの作成に成功。POSTやPUTへの応答。新しいリソースのURIをLocationヘッダで返す。</td></tr>
+    <tr><td>204</td><td>No Content</td><td>成功したが返すボディがない。DELETEへの応答などで使う。</td></tr>
+    <tr><td>301</td><td>Moved Permanently</td><td>恒久的な移転。<a href="uri.html#cool-uri">URIを変更したとき</a>の正しい案内方法。</td></tr>
+    <tr><td>302</td><td>Found</td><td>一時的な移動。ログイン後のページ振り分けなど。</td></tr>
+    <tr><td>304</td><td>Not Modified</td><td>「前回から変わっていない」。キャッシュと組で使う(後述)。</td></tr>
+    <tr><td>400</td><td>Bad Request</td><td>リクエストの形式が不正。パラメータ間違いなど。</td></tr>
+    <tr><td>401</td><td>Unauthorized</td><td>認証が必要(名乗っていない/認証に失敗)。</td></tr>
+    <tr><td>403</td><td>Forbidden</td><td>認証はされたが権限がなく禁止。</td></tr>
+    <tr><td>404</td><td>Not Found</td><td>リソースが存在しない。いちばん有名なコード。</td></tr>
+    <tr><td>500</td><td>Internal Server Error</td><td>サーバ内部の異常。プログラムのバグなど。</td></tr>
+    <tr><td>503</td><td>Service Unavailable</td><td>一時的に応答不能。メンテナンス中やアクセス集中。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>301リダイレクトの往復を見る</h3>
+
+<p>URIが引っ越したときの実際のやりとりです。ブラウザはこれを自動でやってくれるので、利用者は移転に気づきません。</p>
+
+<p class="code-caption req">① 古いURIへのリクエスト</p>
+<pre class="req"><code>GET /old-blog/hello HTTP/1.1
+Host: www.example.com</code></pre>
+
+<p class="code-caption res">② 「恒久的に移転しました」— 新しいURIをLocationヘッダで案内</p>
+<pre class="res"><code>HTTP/1.1 301 Moved Permanently
+Location: https://www.example.com/blog/hello
+Content-Length: 0</code></pre>
+
+<p class="code-caption req">③ クライアントは案内されたURIへ自動で再リクエスト</p>
+<pre class="req"><code>GET /blog/hello HTTP/1.1
+Host: www.example.com</code></pre>
+
+<p class="code-caption res">④ 今度こそ本体が返る</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+
+&lt;!DOCTYPE html&gt;
+...</code></pre>
+
+<div class="note">
+<p>ステータスコードは<strong>プログラムが機械的に分岐できる</strong>ように数字になっています。
+Web APIの設計では「成功したのに200でエラーメッセージを返す」ような使い方は嫌われます。
+→ <a href="api-design.html">API設計のページ</a></p>
+</div>
+</section>
+
+<section id="headers">
+<h2>HTTPヘッダ</h2>
+
+<p>
+<strong>ヘッダ</strong>は、メッセージの<strong>メタデータ(データについてのデータ)</strong>です。
+宅配便でいえば、荷物の中身そのもの(ボディ)に対する<strong>伝票の付加情報</strong>——
+「品名: 書籍」「重さ: 500g」「割れ物注意」——にあたります。
+「<code>名前: 値</code>」という形式で、1行に1つずつ並びます。よく登場するものを押さえましょう。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>ヘッダ</th><th>方向</th><th>役割</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Host</td><td>リクエスト</td><td>宛先のサーバ名。1台のサーバが複数のサイトを担当できるのはこのヘッダのおかげ。HTTP/1.1で唯一の必須ヘッダ。</td></tr>
+    <tr><td>Content-Type</td><td>両方</td><td>ボディの種類を<strong>MIMEタイプ</strong>で示す。MIMEタイプは「大分類/小分類」形式のデータ形式ラベルで、<code>text/html</code>(HTML)、<code>application/json</code>(JSON)、<code>image/png</code>(PNG画像)など。受け取った側はこれを見て解釈方法を決める。</td></tr>
+    <tr><td>Content-Length</td><td>両方</td><td>ボディのサイズ(バイト数)。どこまで読めばメッセージの終わりかを知らせる。</td></tr>
+    <tr><td>Accept</td><td>リクエスト</td><td>「私はこの形式が受け取れます」という希望(<code>text/html</code>、<code>application/json</code> など)。サーバが表現を出し分ける手がかり。</td></tr>
+    <tr><td>User-Agent</td><td>リクエスト</td><td>クライアントの自己紹介(ブラウザ名やアプリ名)。</td></tr>
+    <tr><td>Cache-Control</td><td>両方</td><td>キャッシュ(再利用)の可否や有効期間の指示(後述)。</td></tr>
+    <tr><td>Set-Cookie / Cookie</td><td>レスポンス / リクエスト</td><td>サーバがクライアントに小さなメモ(Cookie)を渡し(Set-Cookie)、クライアントが以後のリクエストで毎回提示する(Cookie)。ログイン状態の維持に使う(後述)。</td></tr>
+    <tr><td>Authorization</td><td>リクエスト</td><td>認証情報(パスワードやトークンなど「本人であることの証明」)を運ぶ。Web APIでは <code>Bearer</code> トークン方式が主流。</td></tr>
+    <tr><td>Location</td><td>レスポンス</td><td>リダイレクト先や、新規作成されたリソースのURI。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>ヘッダは自作もできます(慣習として <code>X-</code> で始めることが多い)。
+HTTPが「メソッド+ステータスコード+ヘッダ」という骨組みを固定しつつ、
+ヘッダで拡張の余地を残していることが、30年以上使われ続けている柔軟さの源です。</p>
+</div>
+</section>
+
+<section id="stateless">
+<h2>ステートレス性</h2>
+
+<p>
+HTTPの設計上の大きな特徴が<strong>ステートレス(stateless)</strong>であることです。
+ステートレスとは、<strong>サーバがクライアントの「前回までのやりとり」(アプリケーション状態)を覚えない</strong>という方針のこと。
+サーバにとって、すべてのリクエストは「初対面の依頼」として処理されます。
+</p>
+
+<div class="analogy">
+<p>書籍の有名なたとえが<strong>ハンバーガーショップの注文</strong>です。
+状態を覚える(ステートフルな)店なら「ハンバーガーください」「セットで」「ポテトはLで」と会話を積み重ねられます。
+しかしステートレスな店では、店員は直前の会話を覚えていないので「セットで」だけでは通じません。
+毎回「<strong>ハンバーガーセットをポテトLで1つください</strong>」と、
+<strong>必要な情報をすべて含んだ完全な注文</strong>を言う必要があります。
+HTTPのリクエストはこの「完全な注文」方式です(こうしたメッセージを自己記述的メッセージと呼びます)。</p>
+</div>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>内容</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>利点</td><td>サーバはリクエストを処理したら忘れてよいので、<strong>サーバを何台にも増やして負荷を分散しやすい</strong>(スケーラビリティ)。どのサーバが受けても同じように処理でき、1台が故障しても他のサーバが引き継げる。Webが世界規模に育てた立役者。</td></tr>
+    <tr><td>欠点</td><td>毎回すべてを名乗る必要があり、送信データが増える。認証などの処理も毎回繰り返される。「ログインしたのに次のページで忘れられる」のでは困るため、状態が必要な場面では下記のCookieなどで補う。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Cookieとセッション — ステートレスなHTTPでログイン状態を保つ</h3>
+
+<p>
+「ログインしたままにする」機能は、HTTP自体を変えずに、<strong>ヘッダで会員証をやりとりする</strong>ことで実現しています。
+</p>
+
+<p class="code-caption req">① ログイン情報を送る</p>
+<pre class="req"><code>POST /login HTTP/1.1
+Host: www.example.com
+Content-Type: application/x-www-form-urlencoded
+
+username=hanako&amp;password=secret123</code></pre>
+
+<p class="code-caption res">② サーバが「会員証」(セッションID入りCookie)を発行する</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Set-Cookie: session_id=xg93k2f8a1; HttpOnly; Secure
+Content-Type: text/html; charset=utf-8
+
+(ログイン後のページ)</code></pre>
+
+<p class="code-caption req">③ 以後のリクエストでは、クライアントが毎回Cookieを提示する</p>
+<pre class="req"><code>GET /mypage HTTP/1.1
+Host: www.example.com
+Cookie: session_id=xg93k2f8a1</code></pre>
+
+<p>
+サーバは受け取ったセッションID(ログイン中の利用者を識別する合言葉)を手がかりに
+「これは花子さんだ」と判断します。
+リクエスト自体は相変わらず毎回完全な形で送られており、<strong>HTTPのステートレス性は保たれたまま</strong>、
+その上に状態管理を載せているのがポイントです。
+</p>
+
+<div class="warn">
+<p>Cookieのやりとりが盗み見られるとログイン状態ごと乗っ取られます(セッションハイジャック)。
+CookieにはHTTPS必須の <code>Secure</code> 属性などを付け、通信全体を後述のHTTPSで守るのが現在の常識です。</p>
+</div>
+</section>
+
+<section id="cache">
+<h2>キャッシュと条件付きGET</h2>
+
+<p>
+同じ画像やページを毎回ダウンロードし直すのは無駄です。
+そこでHTTPには、取得したリソースをクライアント側で保存して再利用する<strong>キャッシュ(cache)</strong>の仕組みが組み込まれています。
+サーバはCache-Controlヘッダで再利用の条件を指示します。
+</p>
+
+<p class="code-caption res">「600秒間は再利用してよい」という指示付きのレスポンス</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: image/png
+Cache-Control: max-age=600
+
+(画像データ)</code></pre>
+
+<h3>条件付きGET — 「変わっていたら」だけ送ってもらう</h3>
+
+<p>
+有効期限が切れたあとも、リソースが変わっていなければ再ダウンロードは不要のはずです。
+そこで使うのが<strong>条件付きGET</strong>です。サーバはリソースの版を表すタグ(ETag)を発行し、
+クライアントは「この版から変わっていたらください」と問い合わせます。
+</p>
+
+<p class="code-caption res">① 最初のレスポンスに版タグ(ETag)が付いてくる</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+ETag: "abc123"
+
+(ページ本体 100KB)</code></pre>
+
+<p class="code-caption req">② 2回目以降は「この版から変わっていたら」と条件を付けて聞く</p>
+<pre class="req"><code>GET /news/2026/07/ HTTP/1.1
+Host: www.example.com
+If-None-Match: "abc123"</code></pre>
+
+<p class="code-caption res">③ 変わっていなければ、本体なしの304だけが返る</p>
+<pre class="res"><code>HTTP/1.1 304 Not Modified
+ETag: "abc123"</code></pre>
+
+<p>
+③のレスポンスにはボディがありません。100KBの本体の代わりに数十バイトの「変わってないよ」だけが流れ、
+クライアントは手元のキャッシュを表示します。
+<strong>「変わっていなければ本体を送らない」</strong>——この節約が、世界中で膨大な通信量を削減しています。
+</p>
+
+<div class="note">
+<p>更新日時で判定する方式(Last-Modified と If-Modified-Since)もあります。考え方は同じです。
+ブラウザの開発者ツールのNetworkタブで、304がたくさん流れている様子を実際に観察できます。</p>
+</div>
+</section>
+
+<section id="https">
+<h2>HTTPS — 暗号化されたHTTP</h2>
+
+<p>
+HTTPのメッセージはただのテキストなので、そのまま流すと通信経路上で読めてしまいます。
+そこで、<strong>TLS(Transport Layer Security)という暗号化の層をHTTPとTCPの間に挟んだ</strong>のが
+<strong>HTTPS(HTTP Secure)</strong>です。HTTP自体の会話ルールは変わらず、通信路だけが保護されます。
+HTTPSは次の3つを守ります。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">盗聴の防止(暗号化)</p>
+    <p>経路上の第三者がメッセージを読めない。パスワードやカード番号、Cookieを守る。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">改ざんの検知</p>
+    <p>途中でメッセージが書き換えられたら検知できる。広告の勝手な差し込みなども防ぐ。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">なりすましの防止(証明書)</p>
+    <p>「本当に example.com のサーバか」をサーバ証明書で確認できる。偽サイトへの誘導を防ぐ。</p>
+  </div>
+</div>
+
+<div class="modern">
+<p>書籍刊行の2010年ごろ、HTTPSは「ログインページと決済ページだけ」のものでした。
+現在は<strong>すべてのページでHTTPSを使うのが事実上必須</strong>です。
+ブラウザはHTTPのサイトに「保護されていない通信」と警告を出し、アドレスバーの鍵マークが標準の光景になりました。
+転機は、証明書を無料で自動発行するLet's Encrypt(2016年正式サービス開始)の登場です。
+また、後述のHTTP/2以降は主要ブラウザが事実上HTTPSでしか通信しないため、「暗号化は前提」の時代になっています。</p>
+</div>
+</section>
+
+<section id="versions">
+<h2>HTTPのバージョンの歴史</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>バージョン</th><th>年</th><th>特徴</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>HTTP/0.9</td><td>1991</td><td>最初の実装。GETしかなく、ヘッダもステータスコードもない「HTMLを取ってくるだけ」の仕組み。</td></tr>
+    <tr><td>HTTP/1.0</td><td>1996</td><td>ヘッダ・ステータスコード・POSTなどが加わり、ほぼ現在の形に。ただし1リクエストごとにTCP接続を張り直す。</td></tr>
+    <tr><td>HTTP/1.1</td><td>1997</td><td>接続を使い回すkeep-alive(持続的接続)が標準になり高速化。Hostヘッダ必須化。書籍が解説する版で、20年以上主役だった。</td></tr>
+    <tr><td>HTTP/2</td><td>2015</td><td>1本のTCP接続で複数のリクエスト/レスポンスを並行して流せる<strong>多重化</strong>。テキストからバイナリ形式になり、ヘッダも圧縮。</td></tr>
+    <tr><td>HTTP/3</td><td>2022</td><td>土台をTCPから<strong>QUIC(UDPベースの新しいトランスポート)</strong>に変更。接続開始が速く、モバイル回線の切り替えにも強い。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="point">
+<p>バージョンが上がって変わったのは<strong>運び方(速さ・効率)だけ</strong>です。
+GETやPOSTというメソッドの意味も、404や200というステータスコードの意味も、ヘッダの役割も変わっていません。
+だからこのページで学んだ知識は、HTTP/1.1でもHTTP/3でもそのまま通用します。
+「意味の層は不変、転送の層だけ世代交代」——これがHTTPの歴史の読み方です。</p>
+</div>
+</section>
+
+<section id="try">
+<h2>手元で確認するには</h2>
+
+<p>
+ここまでの生のメッセージを「見てみたい」という人向けに、定番の道具を紹介します(必須ではありません)。
+<code>curl</code>(カール)はコマンドラインからHTTPリクエストを送るツールで、
+<code>-v</code> オプションを付けると送受信されるメッセージをそのまま表示してくれます。
+</p>
+
+<p class="code-caption">curl -v の実行例(&gt; が送信、&lt; が受信)</p>
+<pre><code>$ curl -v https://www.example.com/
+
+*   Trying 93.184.216.34:443...
+* Connected to www.example.com port 443
+* SSL connection using TLSv1.3
+&gt; GET / HTTP/1.1
+&gt; Host: www.example.com
+&gt; User-Agent: curl/8.5.0
+&gt; Accept: */*
+&gt;
+&lt; HTTP/1.1 200 OK
+&lt; Content-Type: text/html; charset=utf-8
+&lt; Content-Length: 1256
+&lt; Cache-Control: max-age=600
+&lt; ETag: "abc123"
+&lt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+...</code></pre>
+
+<p>
+このページで学んだ部品——リクエストライン、Hostヘッダ、ステータスライン、Content-Type、ETag——が
+実際の通信にそのまま現れていることが確認できます。
+ブラウザ派なら、開発者ツール(F12キー)のNetworkタブでも同じ情報を見られます。
+</p>
+
+<div class="note">
+<p>次のページでは、HTTPが運んでいる「中身」——HTMLをはじめとする表現(レプリゼンテーション)——に進みます。
+→ <a href="html.html">HTMLのページ</a>。
+また、メソッドとステータスコードを設計にどう活かすかは<a href="rest.html">REST</a>と<a href="api-design.html">API設計</a>で扱います。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="uri.html"><span class="nav-dir">前のページ</span>URI — リソースの住所</a>
+  <a class="next" href="html.html"><span class="nav-dir">次のページ</span>HTML — リソースの表現とハイパーメディア</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

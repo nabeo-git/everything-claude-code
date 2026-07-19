@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API設計 — Web APIを設計する | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="URI設計、メソッド割り当て、JSON表現、エラー設計、バージョニングまで、Web API設計の手順とベストプラクティスを架空の書店APIで実演します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html" aria-current="page">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item hl">識別 = URI</span>
+  <span class="mm-item">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item hl">設計思想 = REST</span>
+</div>
+
+<h1>API設計 — Web APIを設計する</h1>
+
+<p class="lead">
+ここまでに学んだURI・HTTP・JSON・RESTを総動員して、いよいよ<strong>自分でWeb APIを設計する</strong>実践編です。
+このページでは架空の「オンライン書店API」を題材に、機能の整理からエラー設計までを通しで実演します。
+設計と言っても難しい話ではありません。要は「使う人が迷わない住所と作法を決めること」です。
+書籍『Webを支える技術』第5部「Webサービスの設計」に対応する内容です。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#good-api">良いWeb APIとは</a></li>
+    <li><a href="#steps">設計の手順 — 6つのステップ</a></li>
+    <li><a href="#uri-design">URI設計のベストプラクティス</a></li>
+    <li><a href="#methods">メソッド割り当てと表現設計</a></li>
+    <li><a href="#error-design">エラー設計</a></li>
+    <li><a href="#evolvable">変化に耐える設計 — バージョニングと後方互換性</a></li>
+    <li><a href="#auth">認証とセキュリティ(さわりだけ)</a></li>
+    <li><a href="#openapi">最新動向: OpenAPI(Swagger)</a></li>
+  </ol>
+</div>
+
+<section id="good-api">
+<h2>良いWeb APIとは</h2>
+
+<p>
+Web APIを使うのは人間ではなくプログラム——正確には、<strong>そのプログラムを書くプログラマ</strong>です。
+つまりAPI設計とは、プログラマという「利用者」のためのユーザインターフェース設計です。
+良いAPIの条件は次の3つに集約されます。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">予測できる</p>
+    <p>一部を見れば残りの使い方を推測できる。<a href="rest.html">RESTの統一インターフェース</a>に従うことがその近道。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">覚えやすい</p>
+    <p>短く一貫したURIと命名。例外や特別ルールが少ないほど、ドキュメントを読み返す回数が減る。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">壊れない</p>
+    <p>一度公開したURIと仕様を変えない。<a href="uri.html">クールURI</a>(変わらないURI)の考え方をAPIにも適用する。</p>
+  </div>
+</div>
+
+<div class="point">
+<p>APIは一度公開すると、世界中の見知らぬプログラムがそれに依存し始めます。
+Webサイトのデザインは明日変えられますが、<strong>APIの設計ミスは「使っている全プログラムの修正」を意味する</strong>ため、後から直すのが非常に困難です。
+だからAPIこそ、最初の設計が大事なのです。</p>
+</div>
+</section>
+
+<section id="steps">
+<h2>設計の手順 — 6つのステップ</h2>
+
+<p>Web API設計は、次の6ステップで進めるのが定石です。</p>
+
+<ol class="flow">
+  <li><span class="flow-title">提供する機能の整理</span>
+    <span class="flow-desc">利用者に何をさせたいかを列挙する。例:「本を検索する」「本の詳細を見る」「レビューを読む・投稿する」。</span></li>
+  <li><span class="flow-title">リソースの洗い出し</span>
+    <span class="flow-desc">機能を「モノ(名詞)」に変換する。「本を検索する」→ <strong>書籍</strong>というリソース、「レビューを投稿する」→ <strong>レビュー</strong>というリソース。</span></li>
+  <li><span class="flow-title">URI設計</span>
+    <span class="flow-desc">各リソースに住所を付ける。<code>/books</code>、<code>/books/42</code>、<code>/books/42/reviews</code> のように。</span></li>
+  <li><span class="flow-title">メソッド割り当て</span>
+    <span class="flow-desc">各URIに GET/POST/PUT/DELETE のどれを許すかを決め、リソース×メソッドの表を作る。</span></li>
+  <li><span class="flow-title">表現(JSON)設計</span>
+    <span class="flow-desc">レスポンスとリクエストボディのフィールド名・型・日付形式などを決める。</span></li>
+  <li><span class="flow-title">エラー設計</span>
+    <span class="flow-desc">失敗時にどのステータスコードで、どんなエラー情報を返すかを決める。</span></li>
+</ol>
+
+<p>
+以降のセクションでは、架空の<strong>オンライン書店API</strong>(<code>api.example.com</code>)を題材に、
+ステップ3〜6を順に実演していきます。
+</p>
+</section>
+
+<section id="uri-design">
+<h2>URI設計のベストプラクティス</h2>
+
+<p>
+URIはAPIの「顔」です。基本原則はシンプルで、<strong>URIは名詞(リソース)、動詞(操作)はHTTPメソッドに任せる</strong>——
+これだけで大半の設計判断が決まります。定番のルールを良い例・悪い例で見てみましょう。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>ルール</th><th>良い例</th><th>悪い例</th><th>悪い理由</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>名詞・複数形で表す</td>
+      <td><code>GET /books</code></td>
+      <td><code>GET /getBookList</code></td>
+      <td>動詞入り。操作はメソッド(GET)がすでに表しているので二重になる。</td>
+    </tr>
+    <tr>
+      <td>個別リソースはIDで指す</td>
+      <td><code>GET /books/42</code></td>
+      <td><code>GET /book.php?id=42</code></td>
+      <td>実装技術(.php)が漏れている。実装を変えたらURIが壊れる。</td>
+    </tr>
+    <tr>
+      <td>階層は「所属関係」を表す</td>
+      <td><code>GET /books/42/reviews</code></td>
+      <td><code>GET /reviews?bookId=42</code></td>
+      <td>誤りではないが、「書籍42に属するレビュー」という関係は階層で表す方が読み取りやすい。</td>
+    </tr>
+    <tr>
+      <td>動詞を入れない</td>
+      <td><code>DELETE /books/42</code></td>
+      <td><code>POST /deleteBook</code></td>
+      <td>削除の意味は DELETE メソッドが持っている。URIに動詞を入れると統一インターフェースが崩れる。</td>
+    </tr>
+    <tr>
+      <td>絞り込み・並び替えはクエリで</td>
+      <td><code>GET /books?author=yamamoto&amp;sort=year</code></td>
+      <td><code>GET /books/author/yamamoto/sort/year</code></td>
+      <td>検索条件はリソースの階層ではなく「選び方の指定」。クエリパラメータ(→ <a href="uri.html">URIのページ</a>)の出番。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>複数形(<code>/books</code>)を使うのは、「books というリソースの集まり(コレクション)があり、
+その中の1件が <code>/books/42</code>」という親子関係が自然に読めるからです。
+小文字・ハイフン区切り(例: <code>/best-sellers</code>)で統一するのも定番です。</p>
+</div>
+</section>
+
+<section id="methods">
+<h2>メソッド割り当てと表現設計</h2>
+
+<p>URIが決まったら、各URIに許すメソッドを表にします。この表がそのまま<strong>エンドポイント一覧</strong>
+(エンドポイント = APIの窓口となる個々のURI)になり、APIの全体仕様の骨格です。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>エンドポイント</th><th>GET</th><th>POST</th><th>PUT</th><th>DELETE</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>/books</code></td>
+      <td>書籍の一覧・検索</td>
+      <td>書籍の新規登録</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><code>/books/42</code></td>
+      <td>書籍42の取得</td>
+      <td>—</td>
+      <td>書籍42の更新</td>
+      <td>書籍42の削除</td>
+    </tr>
+    <tr>
+      <td><code>/books/42/reviews</code></td>
+      <td>書籍42のレビュー一覧</td>
+      <td>レビューの投稿</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><code>/books/42/reviews/7</code></td>
+      <td>レビュー7の取得</td>
+      <td>—</td>
+      <td>レビュー7の更新</td>
+      <td>レビュー7の削除</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>実例① 検索 — GET /books?q=web(ページネーション付き)</h3>
+
+<p>
+一覧系のAPIでは、結果を小分けにして返す<strong>ページネーション(pagination、ページ分割)</strong>が必須です。
+何万件もの結果を一度に返すと、サーバもクライアントもパンクするからです。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(検索+ページ指定)</p>
+<pre class="req"><code>GET /books?q=web&amp;page=1&amp;per_page=20 HTTP/1.1
+Host: api.example.com
+Accept: application/json</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(件数情報付きの一覧)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "total": 42,
+  "page": 1,
+  "per_page": 20,
+  "books": [
+    {
+      "id": 42,
+      "title": "Webを支える技術",
+      "author": "山本陽平",
+      "published_on": "2010-04-08"
+    },
+    {
+      "id": 57,
+      "title": "はじめてのWeb API",
+      "author": "example出版編集部",
+      "published_on": "2024-11-01"
+    }
+  ]
+}</code></pre>
+</div>
+</div>
+
+<h3>実例② レビュー投稿 — POST /books/42/reviews</h3>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(投稿内容をJSONで)</p>
+<pre class="req"><code>POST /books/42/reviews HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comment": "Webの全体像がつながりました"
+}</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(201 Created + Location)</p>
+<pre class="res"><code>HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Location: https://api.example.com/books/42/reviews/8
+
+{
+  "id": 8,
+  "rating": 5,
+  "comment": "Webの全体像がつながりました",
+  "created_at": "2026-07-19T09:30:00+09:00"
+}</code></pre>
+</div>
+</div>
+
+<h3>表現(JSON)設計の定番ルール</h3>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>項目</th><th>定番のやり方</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ページネーション</td>
+      <td><code>page</code> / <code>per_page</code> 方式(ページ番号)か、<code>limit</code> / <code>offset</code> 方式(先頭からの位置)。どちらでもよいが<strong>API全体で統一</strong>する。</td>
+    </tr>
+    <tr>
+      <td>日付・時刻</td>
+      <td><strong>ISO 8601</strong>形式(例: <code>2026-07-19T09:30:00+09:00</code>)。世界中のプログラミング言語がそのまま解釈できる国際標準。</td>
+    </tr>
+    <tr>
+      <td>フィールド命名</td>
+      <td><code>created_at</code>(スネークケース)か <code>createdAt</code>(キャメルケース)かは好みでよいが、<strong>混在させない</strong>。一貫性そのものが仕様。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<section id="error-design">
+<h2>エラー設計</h2>
+
+<p>
+エラーのときこそAPIの品質が問われます。原則は2つ。
+<strong>①ステータスコードで「失敗の種類」を正しく伝える</strong>、
+<strong>②ボディで「何が悪かったか」を機械にも人間にも分かる形で伝える</strong>。
+使い分けの定番は次のとおりです(コード体系の全体像は → <a href="http.html">HTTPのページ</a>)。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>コード</th><th>名前</th><th>いつ使うか</th><th>書店APIでの例</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>400</code></td>
+      <td>Bad Request</td>
+      <td>リクエストの形式が壊れている</td>
+      <td>ボディのJSONが文法エラーで解析できない</td>
+    </tr>
+    <tr>
+      <td><code>401</code></td>
+      <td>Unauthorized</td>
+      <td>認証されていない(あなたが誰か分からない)</td>
+      <td>トークンなしでレビューを投稿しようとした</td>
+    </tr>
+    <tr>
+      <td><code>403</code></td>
+      <td>Forbidden</td>
+      <td>認証済みだが権限がない(誰かは分かるがダメ)</td>
+      <td>他人のレビューを削除しようとした</td>
+    </tr>
+    <tr>
+      <td><code>404</code></td>
+      <td>Not Found</td>
+      <td>リソースが存在しない</td>
+      <td><code>GET /books/9999</code>(そんな本はない)</td>
+    </tr>
+    <tr>
+      <td><code>422</code></td>
+      <td>Unprocessable Content</td>
+      <td>形式は正しいが内容が検証エラー</td>
+      <td><code>rating</code> に 6 を指定した(1〜5のはず)</td>
+    </tr>
+    <tr>
+      <td><code>500</code></td>
+      <td>Internal Server Error</td>
+      <td>サーバ側の予期しない障害(クライアントは悪くない)</td>
+      <td>データベースが落ちていた</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p class="code-caption res">エラーレスポンスの例(検証エラー)</p>
+<pre class="res"><code>HTTP/1.1 422 Unprocessable Content
+Content-Type: application/json; charset=utf-8
+
+{
+  "error": "validation_failed",
+  "message": "rating は 1〜5 の整数で指定してください",
+  "field": "rating"
+}</code></pre>
+
+<div class="warn">
+<p>ありがちな失敗が「何が起きても <code>200 OK</code> を返し、ボディの中に <code>"success": false</code> と書く」設計です。
+これではキャッシュや監視ツールなどHTTPを理解する道具がエラーを検知できず、
+<a href="rest.html">RESTのページ</a>で学んだ「Webのインフラに乗れる」利点を自ら捨てることになります。</p>
+</div>
+
+<div class="modern">
+<p>エラーボディの形式は長らく各社バラバラでしたが、現在は<strong>RFC 9457「Problem Details for HTTP APIs」</strong>という標準形式があります。
+<code>Content-Type: application/problem+json</code> を使い、決まったフィールド名で問題を記述します。新規設計なら採用を検討する価値があります。</p>
+
+<p class="code-caption res">RFC 9457形式のエラーレスポンス</p>
+<pre class="res"><code>HTTP/1.1 422 Unprocessable Content
+Content-Type: application/problem+json
+
+{
+  "type": "https://api.example.com/problems/validation-failed",
+  "title": "入力値が正しくありません",
+  "status": 422,
+  "detail": "rating は 1〜5 の整数で指定してください"
+}</code></pre>
+</div>
+</section>
+
+<section id="evolvable">
+<h2>変化に耐える設計 — バージョニングと後方互換性</h2>
+
+<p>
+APIは公開した瞬間から「変えられないもの」になりますが、サービスは成長し、仕様変更は必ず起きます。
+そこで、変化に備える仕掛けをあらかじめ組み込んでおきます。
+</p>
+
+<h3>バージョニング</h3>
+
+<p>
+<strong>バージョニング(versioning)</strong>とは、APIの版数をURIなどに含めて、
+新旧の仕様を並行運用できるようにすることです。
+主流は<strong>URIにバージョンを入れる方式</strong>で、一目で分かり、試しやすいのが利点です。
+</p>
+
+<pre><code>https://api.example.com/v1/books/42   ← 現行版
+https://api.example.com/v2/books/42   ← 大きな仕様変更をした新版(v1も当面残す)</code></pre>
+<p class="code-caption">URIバージョニングの例。ヘッダで指定する方式(例: <code>Accept: application/vnd.example.v2+json</code>)もある</p>
+
+<h3>後方互換性</h3>
+
+<p>
+<strong>後方互換性(backward compatibility)</strong>とは、「昔から使っているクライアントが壊れずに動き続けること」。
+変更には安全なものと危険なものがあります。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>変更の種類</th><th>安全?</th><th>理由</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>レスポンスへのフィールド<strong>追加</strong></td>
+      <td>安全</td>
+      <td>既存クライアントは知らないフィールドを無視すればよい。</td>
+    </tr>
+    <tr>
+      <td>フィールドの<strong>削除・改名</strong></td>
+      <td>破壊的変更</td>
+      <td>そのフィールドを読んでいたクライアントが即座に壊れる。</td>
+    </tr>
+    <tr>
+      <td>フィールドの<strong>意味や型の変更</strong></td>
+      <td>破壊的変更</td>
+      <td>見た目は動き続けるのに結果が狂う、最も発見しにくい壊れ方をする。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="point">
+<p>まとめると、<strong>「追加は自由、削除と変更はバージョンアップ(v2)の仕事」</strong>が原則です。
+そしてバージョンアップしても古いURIをすぐには消さない——これは
+<a href="uri.html">URIのページ</a>で学んだ<strong>クールURI(URIは変わらない・壊さない)</strong>のAPI版の実践です。</p>
+</div>
+</section>
+
+<section id="auth">
+<h2>認証とセキュリティ(さわりだけ)</h2>
+
+<p>
+実際のAPIでは「誰からのリクエストか」を確認する<strong>認証(authentication)</strong>が必要になります。
+代表的な方式だけ、名前と雰囲気を押さえておきましょう。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">APIキー</p>
+    <p>利用者ごとに発行される合言葉の文字列。ヘッダに載せて送る。簡易だが、利用者の識別と利用量の管理には十分。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">Bearerトークン</p>
+    <p>ログイン後に発行される「持参人有効の通行証」。<code>Authorization</code> ヘッダに載せる(下の例)。現在のAPIで最も一般的。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">OAuth 2.0</p>
+    <p>「他サービスに、自分の代わりに安全に権限を委ねる」ための標準の仕組み。パスワードを渡さずに連携できる。</p>
+  </div>
+</div>
+
+<p class="code-caption req">Bearerトークンを付けたリクエストの例</p>
+<pre class="req"><code>GET /books/42 HTTP/1.1
+Host: api.example.com
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.(以下略)</code></pre>
+
+<div class="warn">
+<p>認証情報は平文のHTTPで送ると盗聴で漏れます。だからこそ現在のAPIは<strong>HTTPS(TLSで暗号化されたHTTP)が必須</strong>です(→ <a href="http.html">HTTPのページ</a>)。
+なお、認証・認可の仕組みは本サイトの範囲を超える深いテーマなので、ここでは「そういう部品がある」という紹介にとどめます。</p>
+</div>
+</section>
+
+<section id="openapi">
+<h2>最新動向: OpenAPI(Swagger)</h2>
+
+<div class="modern">
+<p>
+設計したAPIをどう文書化するか。現在の標準は<strong>OpenAPI(旧称Swagger)</strong>です。
+OpenAPIは「<strong>APIの仕様書を機械可読(プログラムが読める形式)に書くための標準</strong>」で、
+YAMLまたはJSONで記述します。書店APIの一部を書くとこうなります。
+</p>
+
+<p class="code-caption">書店APIの一部をOpenAPI(YAML)で記述した断片</p>
+<pre><code>openapi: 3.1.0
+info:
+  title: オンライン書店API
+  version: 1.0.0
+paths:
+  /books/{bookId}:
+    get:
+      summary: 書籍を1冊取得する
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 書籍の情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "404":
+          description: 指定した書籍が存在しない</code></pre>
+
+<p>
+仕様書が機械可読になると、<strong>読めるドキュメントの自動生成</strong>、クライアント/サーバの<strong>コードの自動生成</strong>、
+本物のサーバなしで試せる<strong>モック(模擬サーバ)</strong>の作成までツールに任せられます。
+現在の実務では「まずOpenAPIで仕様を書き、それを起点に開発する」流れが広く定着しています。
+このページで学んだ設計手順は、そのままOpenAPIに書き下ろす内容そのものです。
+</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="ajax.html"><span class="nav-dir">前のページ</span>Ajax — JavaScriptがHTTPを使う仕組み</a>
+  <a class="next" href="glossary.html"><span class="nav-dir">次のページ</span>用語集</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

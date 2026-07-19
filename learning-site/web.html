@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webとは | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="Webの歴史、ハイパーメディア、クライアント/サーバモデルなど、Webというシステムの成り立ちを初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html" aria-current="page">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item hl">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>Webとは — 歴史とアーキテクチャ</h1>
+
+<p class="lead">
+「Web」と「インターネット」は同じ意味で使われがちですが、実は別のものです。
+このページでは、Webがどんなシステムで、どうやって生まれ、なぜ世界標準になれたのかを整理します。
+書籍『Webを支える技術』第1部「Web概論」に対応する内容です。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#web-vs-internet">Webとインターネットは別物</a></li>
+    <li><a href="#hypermedia">Webの本質① ハイパーメディア</a></li>
+    <li><a href="#distributed">Webの本質② 分散システム</a></li>
+    <li><a href="#history">Webの歴史をざっくりつかむ</a></li>
+    <li><a href="#three-tech">Webを支える3つの技術と1つの思想</a></li>
+    <li><a href="#usage">Webの3つの用途 — サイト・UI・API</a></li>
+    <li><a href="#standards">誰がWebのルールを決めているのか</a></li>
+  </ol>
+</div>
+
+<section id="web-vs-internet">
+<h2>Webとインターネットは別物</h2>
+
+<p>
+<strong>インターネット</strong>は、世界中のネットワーク同士をつないだ「通信網そのもの」です。
+その上では、メール、ファイル転送、ビデオ通話など、さまざまなサービスが動いています。
+<strong>Web(World Wide Web)</strong>は、そのインターネットの上で動くサービスのひとつで、
+「文書をリンクでつないで公開・閲覧する仕組み」として1990年ごろに生まれました。
+</p>
+
+<div class="analogy">
+<p>インターネットが「道路網」だとすると、Webはその上を走る「宅配便サービス」のひとつです。
+道路の上には宅配便以外にもバスやタクシー(メールや動画配信など)が走っています。
+ただし現在では、この宅配便(Web/HTTP)があまりに便利なため、
+<strong>他のサービスまでWebの仕組みに乗って運ばれる</strong>ようになっています。</p>
+</div>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>正体</th><th>代表的な構成要素</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>インターネット</td>
+      <td>世界規模の通信網(インフラ)</td>
+      <td>TCP/IP、DNS、ルータ、回線</td>
+    </tr>
+    <tr>
+      <td>Web</td>
+      <td>その上で動く情報システム</td>
+      <td>HTTP、URI、HTML(+ JSON、JavaScript など)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<section id="hypermedia">
+<h2>Webの本質① ハイパーメディア</h2>
+
+<p>
+Webの1つめの本質は<strong>ハイパーメディア</strong>であることです。
+ハイパーメディアとは、文書・画像・動画などの情報を<strong>リンク(ハイパーリンク)で相互につないだシステム</strong>のこと。
+紙の本は先頭から順に読む「線形」の構造ですが、ハイパーメディアでは読者がリンクをたどって
+<strong>自分の興味に沿って情報から情報へ飛び移れる</strong>のが特徴です。
+</p>
+
+<p>HTMLで書くと、リンクはたったこれだけのコードです。この <code>&lt;a&gt;</code> タグこそがWebをWebたらしめています。</p>
+
+<pre><code>&lt;p&gt;
+  詳しくは&lt;a href="https://example.com/docs/http"&gt;HTTPの解説ページ&lt;/a&gt;を
+  参照してください。
+&lt;/p&gt;</code></pre>
+
+<div class="point">
+<p>リンク先は<strong>URI</strong>で指定します。つまりハイパーメディアが成立するには
+「世界中のどの情報でも一意に指せる住所の仕組み」が不可欠です。
+URIがWebの三本柱のひとつである理由がここにあります。→ <a href="uri.html">URIのページ</a></p>
+</div>
+</section>
+
+<section id="distributed">
+<h2>Webの本質② 分散システム</h2>
+
+<p>
+Webの2つめの本質は<strong>分散システム</strong>であることです。
+世界中の無数のサーバがそれぞれ情報を持ち、無数のクライアント(ブラウザやアプリ)がそこへアクセスします。
+1台の巨大コンピュータではなく、<strong>膨大な数のコンピュータの連合体</strong>としてWebは動いています。
+</p>
+
+<h3>クライアント/サーバモデル</h3>
+
+<p>Webの通信は、必ず次の役割分担で行われます。</p>
+
+<ol class="flow">
+  <li><span class="flow-title">クライアントがリクエストを送る</span>
+    <span class="flow-desc">ブラウザやアプリが「この情報をください」「このデータを保存してください」と依頼する。</span></li>
+  <li><span class="flow-title">サーバがレスポンスを返す</span>
+    <span class="flow-desc">依頼を処理して、結果(成功/失敗の別と、データ本体)を返す。</span></li>
+</ol>
+
+<p>
+やりとりは常に<strong>クライアント側から始まる</strong>のがポイントです(サーバから勝手に話しかけることは基本的にありません)。
+このシンプルな役割分担のおかげで、クライアントとサーバはお互いの中身(OSやプログラミング言語)を知らなくても連携できます。
+Windowsのブラウザ、iPhoneのアプリ、Linuxのプログラムが同じサーバと会話できるのはこのためです。
+</p>
+
+<div class="note">
+<p>世界規模の分散システムを成立させるための工夫(ステートレス性など)は
+<a href="http.html">HTTPのページ</a>と<a href="rest.html">RESTのページ</a>で詳しく扱います。
+「なぜWebはこんなに大きくなってもパンクしないのか」の答えがそこにあります。</p>
+</div>
+</section>
+
+<section id="history">
+<h2>Webの歴史をざっくりつかむ</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>年代</th><th>出来事</th><th>意味</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1990年ごろ</td>
+      <td>ティム・バーナーズ=リーがWebを発明</td>
+      <td>研究所(CERN)の文書共有のために、HTTP・URI・HTMLの3点セットを考案。</td>
+    </tr>
+    <tr>
+      <td>1993〜1995年</td>
+      <td>ブラウザ(Mosaic、Netscape)の登場と爆発的普及</td>
+      <td>画像が表示できるブラウザにより、Webが研究者以外にも広がる。</td>
+    </tr>
+    <tr>
+      <td>1990年代後半</td>
+      <td>ブラウザ戦争と標準化の混乱</td>
+      <td>各社が独自機能を乱発し「特定のブラウザ専用ページ」が乱立。標準化の重要性が痛感される。</td>
+    </tr>
+    <tr>
+      <td>2000年ごろ</td>
+      <td>RESTの提唱</td>
+      <td>Roy FieldingがWebがうまくいっている理由を設計理論として整理(→ <a href="rest.html">REST</a>)。</td>
+    </tr>
+    <tr>
+      <td>2005年ごろ</td>
+      <td>Ajaxの流行、Web 2.0</td>
+      <td>Google マップなどが登場し、Webページが「アプリケーション」になる(→ <a href="ajax.html">Ajax</a>)。Web APIの公開も広がる。</td>
+    </tr>
+    <tr>
+      <td>2010年代</td>
+      <td>スマートフォンとクラウドの時代</td>
+      <td>アプリの裏側はほぼWeb API(HTTPS + JSON)に。『Webを支える技術』刊行(2010年)はこの入り口。</td>
+    </tr>
+    <tr>
+      <td>2015年〜現在</td>
+      <td>HTTPS標準化、HTTP/2(2015)・HTTP/3(2022)、SPAの普及</td>
+      <td>通信は原則暗号化に。プロトコルは高速化のため世代交代しつつ、<strong>HTTPの意味(メソッドやステータスコード)は変わらない</strong>。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="modern">
+<p>歴史から学べる大事な教訓は2つあります。
+①独自仕様の乱立は必ず破綻し、<strong>標準への回帰</strong>が起きること。
+②HTTP/2やHTTP/3のような世代交代があっても、<strong>URI・メソッド・ステータスコードといった「意味の部分」は30年間ほぼ変わっていない</strong>こと。
+だからこそ、本サイトで学ぶ基礎は今後も長く通用します。</p>
+</div>
+</section>
+
+<section id="three-tech">
+<h2>Webを支える3つの技術と1つの思想</h2>
+
+<p>ここまでの話を、書籍『Webを支える技術』の核心である「三本柱+設計思想」の形で整理します。</p>
+
+<div class="cards">
+  <a class="card" href="uri.html">
+    <p class="card-title">URI — 識別</p>
+    <p>あらゆる情報に世界で一意な「住所」を付ける。ハイパーリンクの行き先を支える。</p>
+  </a>
+  <a class="card" href="http.html">
+    <p class="card-title">HTTP — 転送</p>
+    <p>住所(URI)を指定して情報を取り寄せ・書き込みするための共通の通信手順。</p>
+  </a>
+  <a class="card" href="html.html">
+    <p class="card-title">HTML — 表現</p>
+    <p>取り寄せた情報の「中身」の書き方。リンクを埋め込めるのでハイパーメディアが実現する。</p>
+  </a>
+  <a class="card" href="rest.html">
+    <p class="card-title">REST — 設計思想</p>
+    <p>3つの技術を「どう組み合わせると良いシステムになるか」をまとめた考え方。</p>
+  </a>
+</div>
+
+<div class="point">
+<p>面白いのは順序です。HTTP・URI・HTMLが先に生まれて普及し、<strong>「なぜWebはこんなにうまくいったのか」を後から理論として説明したのがREST</strong>です(2000年)。
+RESTは発明された規格ではなく、<strong>成功したWebから抽出された設計原則</strong>なのです。</p>
+</div>
+</section>
+
+<section id="usage">
+<h2>Webの3つの用途 — サイト・UI・API</h2>
+
+<p>書籍では、同じWeb技術が3つの異なる用途で使われていると整理しています。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>用途</th><th>説明</th><th>例</th><th>読み手</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Webサイト</td>
+      <td>情報を公開・閲覧するもともとの用途</td>
+      <td>ニュースサイト、ブログ、企業サイト</td>
+      <td>人間(ブラウザ経由)</td>
+    </tr>
+    <tr>
+      <td>ユーザインターフェース(UI)としてのWeb</td>
+      <td>機器やソフトの操作画面をWebで提供する</td>
+      <td>Wi-Fiルータの設定画面、社内システム、Webメール</td>
+      <td>人間(ブラウザ経由)</td>
+    </tr>
+    <tr>
+      <td>API(プログラム用インターフェース)としてのWeb</td>
+      <td>プログラム同士がデータをやりとりする窓口</td>
+      <td>天気予報API、決済API、SNSの投稿API</td>
+      <td>プログラム</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+3つとも、使っている技術は同じ「URI + HTTP + 表現(HTML/JSON)」です。
+違いは<a href="index.html#site-vs-api">全体像ページで見たとおり</a>、返す中身と読み手だけ。
+この「同じ仕組みの使い分け」という見方ができると、Webの技術記事がぐっと読みやすくなります。
+</p>
+
+<div class="modern">
+<p>現在は3つの境界が溶けつつあります。たとえばSPA(シングルページアプリケーション)では、
+最初にWebサイトとしてHTMLとJavaScriptを受け取り、その後はJavaScriptがWeb APIを呼んで画面を更新します。
+つまり<strong>1つのサービスの中で「サイトとしてのWeb」と「APIとしてのWeb」が同時に動いている</strong>のです。→ <a href="ajax.html">Ajaxのページ</a></p>
+</div>
+</section>
+
+<section id="standards">
+<h2>誰がWebのルールを決めているのか</h2>
+
+<p>Webが世界中で相互接続できるのは、ルール(仕様)がオープンに標準化されているからです。主なプレイヤは次のとおりです。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>団体</th><th>担当</th><th>成果物の例</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>IETF</td>
+      <td>インターネットの基盤プロトコル</td>
+      <td>HTTP(RFC 9110〜)、URI(RFC 3986)、TCP/IP、TLS。仕様書は「RFC」という文書番号で公開される。</td>
+    </tr>
+    <tr>
+      <td>WHATWG</td>
+      <td>HTMLとブラウザ関連仕様</td>
+      <td>HTML Living Standard、URL Standard、Fetch Standard。常時更新型の「生きた標準」。</td>
+    </tr>
+    <tr>
+      <td>W3C</td>
+      <td>Web関連技術の標準化(歴史的にHTMLも担当)</td>
+      <td>CSS、WAI-ARIA(アクセシビリティ)など。HTML標準は2019年にWHATWGへ一本化された。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>「RFC」はインターネット標準の仕様書のことで、本サイトでも「HTTPはRFC 9110で定義」などと参照します。
+番号で管理されており、誰でも無料で読めます。仕様の原典に当たれるのもWebのオープンさの表れです。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="index.html"><span class="nav-dir">前のページ</span>全体像</a>
+  <a class="next" href="uri.html"><span class="nav-dir">次のページ</span>URI — リソースの住所</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

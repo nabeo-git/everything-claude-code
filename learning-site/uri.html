@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URI | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="リソースという考え方、URI・URL・URNの違い、URIの構文、%エンコーディング、クールURIの設計原則を初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html" aria-current="page">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item hl">識別 = URI</span>
+  <span class="mm-item">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>URI — リソースの住所</h1>
+
+<p class="lead">
+アドレスバーに表示される <code>https://...</code> という文字列。あれがURIです。
+URIは、Web上のあらゆる情報に付けられた<strong>世界で一意な「住所」</strong>で、
+Webの三本柱のうち「識別」を担当します。
+このページでは、URIの土台にある「リソース」という考え方から、URIの構文の読み方、
+そして「良いURIの付け方」までを学びます。
+書籍『Webを支える技術』第2部「URI」に対応する内容です。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#resource">リソースという考え方</a></li>
+    <li><a href="#uri-url-urn">URI・URL・URNの違い</a></li>
+    <li><a href="#syntax">URIの構文を分解する</a></li>
+    <li><a href="#relative">相対URIとベースURI</a></li>
+    <li><a href="#encoding">日本語とURI(%エンコーディング)</a></li>
+    <li><a href="#cool-uri">良いURIの設計(クールURI)</a></li>
+    <li><a href="#who-uses">URIは誰が使うのか</a></li>
+    <li><a href="#modern-uri">現代のURI事情</a></li>
+  </ol>
+</div>
+
+<section id="resource">
+<h2>リソースという考え方</h2>
+
+<p>
+URIを理解する出発点は、URIそのものではなく<strong>リソース(resource)</strong>という言葉です。
+リソースとは、<strong>Web上の情報の断片ひとつひとつ</strong>のこと。
+書籍『Webを支える技術』はこれを「Web上に存在する、名前を持ったありとあらゆる情報」と説明しています。
+たとえば、次のものはすべてリソースです。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">東京の今日の天気予報</p>
+    <p><code>https://example.com/weather/tokyo/today</code></p>
+  </div>
+  <div class="card">
+    <p class="card-title">商品番号4649の商品情報</p>
+    <p><code>https://shop.example.jp/items/4649</code></p>
+  </div>
+  <div class="card">
+    <p class="card-title">ユーザ123のプロフィール</p>
+    <p><code>https://example.com/users/123</code></p>
+  </div>
+  <div class="card">
+    <p class="card-title">2026年7月のニュース一覧</p>
+    <p><code>https://example.com/news/2026/07/</code></p>
+  </div>
+</div>
+
+<p>
+そして<strong>URI(Uniform Resource Identifier)は、リソースに付けた名前</strong>です。
+「統一的な(Uniform)・リソースの(Resource)・識別子(Identifier)」という名前のとおり、
+世界中のどんな情報にも同じ形式で名前を付けられます。
+名前が付いているからこそ、リンクで指し示したり、プログラムから取得したりできるのです。
+</p>
+
+<div class="analogy">
+<p>リソースは「建物」、URIは「住所」だと考えてください。
+住所が世界で一意だから、手紙(<a href="http.html">HTTPリクエスト</a>)は迷わず届きます。
+また、同じ建物に複数の住所(正面玄関と裏口)があってもよいように、
+<strong>1つのリソースに複数のURIが付いていても構いません</strong>。
+たとえば「今日の天気」と「2026年7月19日の天気」が同じ内容を指すことがあります。</p>
+</div>
+
+<div class="point">
+<p>「まず情報をリソースとして切り出し、それぞれにURIを与える」——
+この発想がWebのすべての土台です。
+後で学ぶ<a href="rest.html">REST</a>は、この「リソースにURIを付け、
+<a href="http.html">HTTP</a>の決まったメソッドで操作する」という設計の作法そのものです。</p>
+</div>
+</section>
+
+<section id="uri-url-urn">
+<h2>URI・URL・URNの違い</h2>
+
+<p>
+URIとよく似た言葉に<strong>URL</strong>があります。関係を整理すると、
+<strong>URIが総称で、URLとURNはその2つの方式</strong>です。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>用語</th><th>正式名</th><th>指し方</th><th>例</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>URI</td><td>Uniform Resource Identifier(識別子)</td><td>総称。URLとURNをまとめた呼び名</td><td>下の2つ両方</td></tr>
+    <tr><td>URL</td><td>Uniform Resource Locator(場所指定子)</td><td><strong>場所</strong>で示す。「どのサーバの、どのパスにあるか」</td><td><code>https://example.com/users/123</code></td></tr>
+    <tr><td>URN</td><td>Uniform Resource Name(名前)</td><td><strong>名前</strong>で示す。場所が変わっても不変のID</td><td><code>urn:isbn:9784774142043</code>(書籍のISBN番号)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+URLは「住所で指す」方式なので、サーバの引っ越しなどで場所が変わるとたどれなくなる弱点があります。
+URNはそれを補うために「場所と無関係な名前」を付ける方式です。
+たとえば書籍のISBN番号は、その本がどこの書店・倉庫にあっても変わりません。
+</p>
+
+<div class="note">
+<p>理屈はそうですが、<strong>現実のWebで使われているURIはほぼすべてURL</strong>です。
+URNは名前を解決して実物にたどり着く仕組みが普及しなかったためです。
+そのため日常会話では「URI」と「URL」はほぼ区別されずに使われます。
+本サイトでは仕様書(RFC 3986)にならって「URI」と表記しますが、
+「URLのことだな」と読み替えて問題ありません。</p>
+</div>
+</section>
+
+<section id="syntax">
+<h2>URIの構文を分解する</h2>
+
+<p>URIは一見ただの文字列ですが、決まった構文(書式)を持ちます。要素をすべて含んだ例で分解してみましょう。</p>
+
+<pre><code>https://user:pass@www.example.com:8080/users/123/posts?page=2&amp;sort=new#comments</code></pre>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>部品</th><th>この例では</th><th>役割</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>スキーム</td><td><code>https</code></td><td>アクセスの方式。<code>https</code> なら「暗号化したHTTPで取得する」という宣言。<code>http</code>、<code>mailto</code>、<code>ftp</code> なども。直後に <code>://</code> が続く。</td></tr>
+    <tr><td>ユーザ情報</td><td><code>user:pass</code></td><td>接続に使うユーザ名とパスワード。末尾に <code>@</code> を付ける。現在はセキュリティ上の理由でほぼ使われない(後述の注意を参照)。</td></tr>
+    <tr><td>ホスト</td><td><code>www.example.com</code></td><td>リソースを持つサーバの名前(ドメイン名)。インターネット全体で一意。DNSという仕組みでIPアドレスに変換される。</td></tr>
+    <tr><td>ポート番号</td><td><code>:8080</code></td><td>そのサーバの「窓口番号」。省略するとスキームごとの標準番号(デフォルトポート)が使われる。HTTPは80番、HTTPSは443番。</td></tr>
+    <tr><td>パス</td><td><code>/users/123/posts</code></td><td>サーバ内でリソースを指す階層的な道筋。フォルダ構造のように <code>/</code> で区切る。ホスト+パスでリソースが一意に決まる。</td></tr>
+    <tr><td>クエリ</td><td><code>?page=2&amp;sort=new</code></td><td>追加の条件やパラメータ。<code>?</code> の後に「名前=値」を <code>&amp;</code> でつないで並べる。検索条件やページ番号によく使う。</td></tr>
+    <tr><td>フラグメント</td><td><code>#comments</code></td><td>取得したリソースの<strong>内部の特定箇所</strong>を指す。ページ内の見出しへのジャンプなどに使う。サーバには送られず、クライアント側で解釈される。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+つまりこのURIは「<strong>HTTPSという方式で、www.example.com というサーバの8080番窓口にある
+/users/123/posts というリソースを、2ページ目・新着順という条件付きで指し、
+その中の comments という箇所を見る</strong>」という意味になります。
+</p>
+
+<div class="note">
+<p>ふだん見かける <code>https://www.example.com/users/123</code> のようなURIは、
+ユーザ情報・ポート番号・クエリ・フラグメントを省略した形です。
+ポート番号が書かれていなくても、裏では「HTTPSだから443番」と自動的に決まっています。</p>
+</div>
+
+<div class="warn">
+<p>ユーザ情報(<code>user:pass@</code>)をURIに書く方式は、パスワードが丸見えになるため
+<strong>現在は使ってはいけません</strong>。主要ブラウザも警告を出したり無視したりします。
+認証情報は<a href="http.html">HTTP</a>のAuthorizationヘッダなどで送るのが現在の作法です。</p>
+</div>
+</section>
+
+<section id="relative">
+<h2>相対URIとベースURI</h2>
+
+<p>
+ここまでの「スキームから始まる完全な形」を<strong>絶対URI</strong>と呼びます。
+一方、HTMLの中ではこんなリンクをよく見かけます。
+</p>
+
+<p class="code-caption">HTML内の相対URIの例</p>
+<pre><code>&lt;a href="../about"&gt;このサイトについて&lt;/a&gt;</code></pre>
+
+<p>
+この <code>../about</code> のように、途中から書き始める形を<strong>相対URI</strong>と呼びます。
+ファイル操作の「1つ上のフォルダ」と同じ発想で、<code>..</code> は「1階層上」を意味します。
+相対URIは、<strong>基準となるURI(ベースURI)</strong>——通常は「今見ているページのURI」——と組み合わせて、
+絶対URIに変換(解決)されます。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>ベースURI(今いる場所)</th><th>相対URI</th><th>解決結果</th></tr>
+  </thead>
+  <tbody>
+    <tr><td rowspan="4"><code>https://example.com/users/123/profile</code></td><td><code>posts</code></td><td><code>https://example.com/users/123/posts</code>(同じ階層)</td></tr>
+    <tr><td><code>../about</code></td><td><code>https://example.com/users/about</code>(1つ上の階層へ)</td></tr>
+    <tr><td><code>/help</code></td><td><code>https://example.com/help</code>(<code>/</code> 始まりはサーバのルートから)</td></tr>
+    <tr><td><code>#top</code></td><td><code>https://example.com/users/123/profile#top</code>(同じページ内の移動)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+解決の手順はこうです。ベースURIの末尾のファイル名部分(<code>profile</code>)を取り除いて
+「現在のフォルダ」<code>/users/123/</code> を求め、そこを起点に相対URIをたどります。
+<code>../about</code> なら、1つ上の <code>/users/</code> に移動してから <code>about</code> を付け、
+<code>/users/about</code> になります。
+</p>
+
+<div class="note">
+<p>相対URIの利点は、サイトのドメインが変わってもリンクを書き換えずに済むことです。
+本サイト自身も、ページ間のリンクはすべて <code>http.html</code> のような相対URIで書かれています。</p>
+</div>
+</section>
+
+<section id="encoding">
+<h2>日本語とURI(%エンコーディング)</h2>
+
+<p>
+URIの仕様(RFC 3986)では、URIにそのまま使える文字が
+<strong>英数字と一部の記号(<code>-</code> <code>.</code> <code>_</code> <code>~</code> など)に制限</strong>されています。
+世界中のどんなシステムでも安全に受け渡せるよう、最小公倍数の文字だけに絞っているのです。
+では日本語のページ名はどうなるのでしょうか。実例を見てみましょう。
+</p>
+
+<p class="code-caption">ブラウザのアドレスバーでの見た目</p>
+<pre><code>https://ja.wikipedia.org/wiki/寿司</code></pre>
+
+<p class="code-caption">実際に通信で使われるURI</p>
+<pre><code>https://ja.wikipedia.org/wiki/%E5%AF%BF%E5%8F%B8</code></pre>
+
+<p>
+「寿司」の部分が <code>%E5%AF%BF%E5%8F%B8</code> という記号列に変わっています。
+これが<strong>%エンコーディング(パーセントエンコーディング)</strong>です。
+仕組みは単純で、文字を文字コード(通常UTF-8)のバイト列にし、
+各バイトを「<code>%</code> + 16進数2桁」で書き表します。
+「寿」はUTF-8で <code>E5 AF BF</code> の3バイトなので <code>%E5%AF%BF</code>、
+「司」は <code>E5 8F B8</code> なので <code>%E5%8F%B8</code> になります。
+</p>
+
+<div class="note">
+<p>最近のブラウザはアドレスバーで%エンコーディングを自動的に復元して「寿司」と表示してくれます。
+しかし、アドレスバーからコピーしてテキストエディタに貼り付けると
+<code>%E5%AF%BF...</code> が現れることがあります。壊れているのではなく、それが本来の姿です。
+検索フォームの送信後にURIへ付く <code>?q=%E5%AF%BF%E5%8F%B8</code> のようなクエリも同じ仕組みです。</p>
+</div>
+</section>
+
+<section id="cool-uri">
+<h2>良いURIの設計(クールURI)</h2>
+
+<p>
+URIは付ければよいというものではなく、設計の良し悪しがあります。
+指針として有名なのが、Web発明者ティム・バーナーズ=リーの言葉
+「<strong>Cool URIs don't change(クールなURIは変わらない)</strong>」です。
+つまり、<strong>変わらないURIこそが良いURI</strong>だという原則です。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>URIの例</th><th>何が問題/何が良いか</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>悪い例</td><td><code>https://example.com/cgi-bin/show_user.php?id=123</code></td><td>実装技術(PHP、CGI)がURIに漏れている。サーバをPHPから別言語に作り替えた瞬間、このURIは死ぬ。</td></tr>
+    <tr><td>悪い例</td><td><code>https://example.com/users/123?session=a8f3xk2z</code></td><td>セッションID(ログインごとに変わる値)が入っている。同じリソースなのに毎回URIが変わり、ブックマークも共有もできない。</td></tr>
+    <tr><td>悪い例</td><td><code>https://example.com/getUserInfo?id=123</code></td><td>「取得する(get)」という動詞入り。操作の種類は<a href="http.html">HTTPメソッド</a>の仕事であり、URIの仕事ではない。</td></tr>
+    <tr><td>良い例</td><td><code>https://example.com/users/123</code></td><td>シンプルで、実装技術に依存せず、リソースを<strong>名詞</strong>で表している。10年後も変えずに済む。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>まとめると、良いURIの条件は次の3つです。</p>
+
+<ol class="flow">
+  <li><span class="flow-title">実装依存の情報を含めない</span>
+    <span class="flow-desc"><code>.php</code>、<code>cgi-bin</code>、<code>servlet</code> など、裏側の技術が変わると壊れる要素を入れない。</span></li>
+  <li><span class="flow-title">セッションIDなど変動する値を含めない</span>
+    <span class="flow-desc">同じリソースにはいつアクセスしても同じURIで届くようにする。</span></li>
+  <li><span class="flow-title">リソースを名詞で簡潔に表す</span>
+    <span class="flow-desc">「何をするか」(動詞)ではなく「何であるか」(名詞)を書く。短いほど覚えやすく、打ち間違いも減る。</span></li>
+</ol>
+
+<div class="point">
+<p>なぜ「変わらない」ことがそこまで重要なのでしょうか。
+<a href="web.html">Webの本質</a>はリンクで情報をつなぐハイパーメディアであり、
+世界中の無数のページ・ブックマーク・検索エンジンが、あなたのURIに向かってリンクを張るからです。
+URIを変えることは<strong>そのリンクをすべてへし折る(リンク切れにする)</strong>ことを意味します。
+URIはあなたのサイトの都合だけのものではなく、<strong>Web全体で共有される公共の資産</strong>なのです。</p>
+</div>
+
+<div class="note">
+<p>どうしてもURIを変更する場合の作法もあります。古いURIへのアクセスに対して
+「301 Moved Permanently(恒久的に移転)」というステータスコードで新しいURIへ案内(リダイレクト)する方法です。
+→ <a href="http.html">HTTPのページ</a>で実例を見ます。</p>
+</div>
+</section>
+
+<section id="who-uses">
+<h2>URIは誰が使うのか</h2>
+
+<p>
+最後に、URIが技術体系の中の「どこで」登場するのかを確認します。
+URIは単独で働くのではなく、次の3つの文脈で他の技術に埋め込まれて使われます。
+</p>
+
+<h3>① HTMLのリンク先として(表現の中)</h3>
+
+<p class="code-caption">HTMLのハイパーリンク</p>
+<pre><code>&lt;a href="https://example.com/users/123"&gt;佐藤さんのプロフィール&lt;/a&gt;
+&lt;img src="/images/logo.png" alt="サイトロゴ"&gt;</code></pre>
+
+<p><code>href</code> や <code>src</code> の値はすべてURIです。ハイパーメディアの「リンクの行き先」を担います。→ <a href="html.html">HTMLのページ</a></p>
+
+<h3>② HTTPリクエストの宛先として(転送の中)</h3>
+
+<p class="code-caption req">HTTPリクエストライン</p>
+<pre class="req"><code>GET /users/123 HTTP/1.1
+Host: example.com</code></pre>
+
+<p>HTTPリクエストの1行目には、URIのパス部分がそのまま書かれます(ホスト部分はHostヘッダに分けて書きます)。→ <a href="http.html">HTTPのページ</a></p>
+
+<h3>③ Web APIのエンドポイントとして(設計の中)</h3>
+
+<p class="code-caption">REST APIのエンドポイント設計の例</p>
+<pre><code>GET    https://api.example.com/v1/users/123        ユーザ123を取得
+PUT    https://api.example.com/v1/users/123        ユーザ123を更新
+DELETE https://api.example.com/v1/users/123        ユーザ123を削除</code></pre>
+
+<p>
+Web APIでは、プログラムがアクセスする窓口(エンドポイント)をURIで設計します。
+同じURIに対して操作(メソッド)だけを変えるのが<a href="rest.html">REST</a>流の設計です。
+具体的な設計手順は<a href="api-design.html">API設計のページ</a>で扱います。
+</p>
+</section>
+
+<section id="modern-uri">
+<h2>現代のURI事情</h2>
+
+<div class="modern">
+<p>書籍刊行(2010年)後のURIまわりのアップデートを3つ紹介します。</p>
+<p><strong>① WHATWG URL Standard</strong> —
+現在のブラウザは、RFC 3986に加えて、実装の細部まで統一した
+「URL Standard」(WHATWGが常時更新)に従ってURIを解釈しています。
+歴史的な経緯から、この標準では「URI」ではなく「URL」という用語に一本化されています。</p>
+<p><strong>② 国際化ドメイン名(IDN)</strong> —
+ホスト名にも日本語などが使えるようになりました(例: <code>日本語.jp</code>)。
+内部ではPunycodeという方式で <code>xn--wgv71a119e.jp</code> のような英数字表現に変換されます。
+%エンコーディングと同じく「見た目は多言語、通信路では制限された文字」という二段構えです。</p>
+<p><strong>③ プログラムでのURI操作</strong> —
+JavaScriptには、URIを自前の文字列処理で切り貼りせずに済む <code>URL</code> オブジェクトが標準装備されました。</p>
+<p class="code-caption">JavaScriptでURIをパースする例(表示のみ)</p>
+<pre><code>const url = new URL("https://www.example.com:8080/users/123?page=2#top");
+console.log(url.protocol);  // "https:"
+console.log(url.hostname);  // "www.example.com"
+console.log(url.port);      // "8080"
+console.log(url.pathname);  // "/users/123"
+console.log(url.searchParams.get("page"));  // "2"
+console.log(url.hash);      // "#top"</code></pre>
+<p>プロパティ名が、このページで学んだ構文の部品(スキーム・ホスト・ポート・パス・クエリ・フラグメント)と
+きれいに対応していることを確認してください。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="web.html"><span class="nav-dir">前のページ</span>Webとは — 歴史とアーキテクチャ</a>
+  <a class="next" href="http.html"><span class="nav-dir">次のページ</span>HTTP — Webの配送プロトコル</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

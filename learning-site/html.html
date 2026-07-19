@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML — リソースの表現とハイパーメディア | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="HTMLをリソースの表現として捉え、マークアップの基本、文書構造、セマンティックHTML、フォーム、JSONなどの表現フォーマットを初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html" aria-current="page">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item">転送 = HTTP</span>
+  <span class="mm-item hl">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>HTML — リソースの表現とハイパーメディア</h1>
+
+<p class="lead">
+URIが「住所」、HTTPが「配送手順」だとすると、HTMLは<strong>運ばれてくる荷物の中身の書き方</strong>です。
+このページでは、HTMLを単なる「ホームページの作り方」ではなく、
+Webの技術体系における<strong>「リソースの表現」</strong>として学びます。
+リンクを埋め込める、というHTMLの本質にも迫ります。
+書籍『Webを支える技術』第4部「ハイパーメディアフォーマット」に対応する内容です。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#representation">HTMLは「リソースの表現」</a></li>
+    <li><a href="#markup">マークアップとは — 文章に意味のしるしを付ける</a></li>
+    <li><a href="#structure">HTML文書の基本構造</a></li>
+    <li><a href="#separation">構造(HTML)・見た目(CSS)・振る舞い(JavaScript)の分離</a></li>
+    <li><a href="#tags">代表的なタグとセマンティックHTML</a></li>
+    <li><a href="#hypermedia">ハイパーメディアとしてのHTML — aタグとform</a></li>
+    <li><a href="#formats">HTML以外の表現フォーマット — XML・JSONと現在の姿</a></li>
+    <li><a href="#modern-html">現在のHTML標準 — Living Standardの時代</a></li>
+  </ol>
+</div>
+
+<section id="representation">
+<h2>HTMLは「リソースの表現」</h2>
+
+<p>
+<a href="http.html">HTTP</a>のリクエストを送ると、レスポンスとして中身のデータが返ってきます。
+その中身の代表格が<strong>HTML(HyperText Markup Language)</strong>です。
+ここで、書籍『Webを支える技術』の重要な用語を2つ押さえましょう。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">リソース</p>
+    <p>Web上の<strong>「情報そのもの」</strong>。たとえば「ユーザ123さんのプロフィール」という情報。<a href="uri.html">URI</a>で識別されます。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">表現(リプレゼンテーション、representation)</p>
+    <p>そのリソースを<strong>「実際に書き表したデータ」</strong>。同じ情報でも、HTMLでもJSONでも書き表せます。</p>
+  </div>
+</div>
+
+<div class="analogy">
+<p>リソースと表現の関係は、「今日の東京の天気」という<strong>事実</strong>と、
+それを伝える<strong>手段</strong>(テレビの天気図、新聞の文章、アプリの通知)の関係に似ています。
+事実はひとつでも、伝え方は相手に合わせて何通りもあります。
+Webでは「事実」がリソース、「伝え方」が表現です。</p>
+</div>
+
+<p>
+実際に、同じリソース <code>/users/123</code> が、人間向けには<strong>HTML</strong>で、
+プログラム向けには<strong>JSON</strong>で返される実例を
+<a href="index.html#site-vs-api">全体像ページの比較</a>で示しています。
+URIもHTTPメソッドも同じで、違うのは表現だけ、という点を確認してみてください。
+</p>
+
+<div class="point">
+<p>HTMLは「Webページを作る言語」である前に、<strong>リソースの表現フォーマットのひとつ</strong>です。
+この見方ができると、「HTMLとJSONは対立するものではなく、同じ役割(表現)の別形式」だと分かり、
+後で学ぶ<a href="ajax.html">Ajax</a>や<a href="api-design.html">Web API設計</a>の話が一気につながります。</p>
+</div>
+</section>
+
+<section id="markup">
+<h2>マークアップとは — 文章に意味のしるしを付ける</h2>
+
+<p>
+HTMLの「M」はマークアップ(markup)の頭文字です。
+マークアップとは、文章に<strong>「ここは見出し」「ここは段落」という意味のしるしを付けること</strong>。
+しるしには<strong>タグ</strong>という記号を使います。
+</p>
+
+<p class="code-caption">タグの基本形 — 開始タグと終了タグで文章を挟む</p>
+<pre><code>&lt;h1&gt;私の自己紹介&lt;/h1&gt;            ← h1 = 最上位の見出し
+&lt;p&gt;はじめまして。山田です。&lt;/p&gt;   ← p = 段落
+&lt;a href="https://example.com/blog/"&gt;ブログはこちら&lt;/a&gt;
+                                    ← a = リンク。href は「属性」</code></pre>
+
+<p>読み方のルールは3つだけです。</p>
+
+<ol class="flow">
+  <li><span class="flow-title">開始タグ <code>&lt;h1&gt;</code> と終了タグ <code>&lt;/h1&gt;</code> で挟む</span>
+    <span class="flow-desc">挟まれた範囲が「その意味を持つ部分」になる。終了タグには <code>/</code> が付く。</span></li>
+  <li><span class="flow-title">タグ名が「意味」を表す</span>
+    <span class="flow-desc"><code>h1</code> は heading(見出し)の1、<code>p</code> は paragraph(段落)、<code>a</code> は anchor(リンク)。</span></li>
+  <li><span class="flow-title">属性(attribute)で追加情報を渡す</span>
+    <span class="flow-desc">開始タグの中の <code>名前="値"</code> の部分。<code>href</code> 属性はリンク先のURIを指定する。</span></li>
+</ol>
+
+<div class="note">
+<p>タグは「見た目の指定」ではなく「意味の指定」です。
+<code>&lt;h1&gt;</code> を付けると太く大きく表示されますが、それはブラウザが
+「見出しだからそれらしく表示しよう」と解釈した結果にすぎません。
+見た目は次の次の節で登場するCSSの担当です。</p>
+</div>
+</section>
+
+<section id="structure">
+<h2>HTML文書の基本構造</h2>
+
+<p>タグを組み合わせた、完全に動く最小のHTML文書を見てみましょう。
+このままファイルに保存してブラウザで開けば表示できます。</p>
+
+<p class="code-caption">最小の自己紹介ページ(profile.html)</p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;山田太郎のページ&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;山田太郎の自己紹介&lt;/h1&gt;
+    &lt;p&gt;こんにちは。プログラミングを勉強中の山田です。&lt;/p&gt;
+    &lt;ul&gt;
+      &lt;li&gt;趣味: 写真&lt;/li&gt;
+      &lt;li&gt;いま学んでいること: Webの仕組み&lt;/li&gt;
+    &lt;/ul&gt;
+    &lt;p&gt;&lt;a href="https://example.com/blog/"&gt;ブログはこちら&lt;/a&gt;&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>各部の役割は次のとおりです。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>部分</th><th>役割</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>&lt;!DOCTYPE html&gt;</code></td>
+      <td>「この文書はHTMLです」という宣言。おまじないではなく、ブラウザに最新のルールで解釈させるためのスイッチ。</td>
+    </tr>
+    <tr>
+      <td><code>&lt;html lang="ja"&gt;</code></td>
+      <td>文書全体の入れ物。<code>lang="ja"</code> は「日本語の文書」という意味で、音声読み上げや翻訳機能が参照する。</td>
+    </tr>
+    <tr>
+      <td><code>&lt;head&gt;</code></td>
+      <td>文書についての情報(メタデータ)を書く場所。<strong>画面には表示されない</strong>。</td>
+    </tr>
+    <tr>
+      <td><code>&lt;meta charset="UTF-8"&gt;</code></td>
+      <td>文字コード(文字をデータにする方式)の宣言。これがないと日本語が文字化けすることがある。現在はUTF-8一択。</td>
+    </tr>
+    <tr>
+      <td><code>&lt;title&gt;</code></td>
+      <td>ページの題名。ブラウザのタブや検索結果、ブックマークに表示される。</td>
+    </tr>
+    <tr>
+      <td><code>&lt;body&gt;</code></td>
+      <td>画面に表示される本文すべてを入れる場所。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>この <code>&lt;head&gt;</code> と <code>&lt;body&gt;</code> の関係は、<a href="http.html">HTTPメッセージ</a>の
+「ヘッダ(メタデータ)とボディ(本体)」の関係とよく似ています。
+「本体+それを説明するメタデータ」はWeb技術に繰り返し現れる構図です。</p>
+</div>
+</section>
+
+<section id="separation">
+<h2>構造(HTML)・見た目(CSS)・振る舞い(JavaScript)の分離</h2>
+
+<p>Webページは3種類の言語の分業で作られています。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>言語</th><th>担当</th><th>例</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>HTML</td>
+      <td><strong>構造</strong> — 何がどういう意味で書かれているか</td>
+      <td>「これは見出し」「これはリスト」「これはリンク」</td>
+    </tr>
+    <tr>
+      <td>CSS</td>
+      <td><strong>見た目</strong> — どんなデザインで表示するか</td>
+      <td>「見出しは青色」「行間を広く」「2段組みにする」</td>
+    </tr>
+    <tr>
+      <td>JavaScript</td>
+      <td><strong>振る舞い</strong> — 操作にどう反応するか</td>
+      <td>「ボタンを押したらメニューを開く」「裏でデータを取ってくる」</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>先ほどの自己紹介ページに、CSSとJavaScriptを少しだけ足すとこうなります。
+<strong>HTML本体(構造)は一切変えていない</strong>ことに注目してください。</p>
+
+<p class="code-caption">CSSを足す — head内に追加。見出しの色と行間だけ変える</p>
+<pre><code>&lt;style&gt;
+  h1 { color: #0b6bcb; }
+  p  { line-height: 1.8; }
+&lt;/style&gt;</code></pre>
+
+<p class="code-caption">JavaScriptを足す — body末尾に追加。ボタンに反応を付ける</p>
+<pre><code>&lt;button id="greet"&gt;あいさつする&lt;/button&gt;
+&lt;script&gt;
+  document.querySelector("#greet").addEventListener("click", function () {
+    alert("こんにちは!");
+  });
+&lt;/script&gt;</code></pre>
+
+<p>
+なぜ分けるのでしょうか。それは<strong>役割が違うものを混ぜると、あとで困る</strong>からです。
+デザインだけ一新したいとき、CSSが分離されていればCSSファイルの差し替えで済みます。
+また、構造が独立していれば、画面を持たないプログラム(検索エンジンなど)もHTMLの意味を読み取れます。
+この「役割の分離」は、URI(識別)・HTTP(転送)・表現を分けたWeb全体の設計方針の縮図でもあります。
+</p>
+</section>
+
+<section id="tags">
+<h2>代表的なタグとセマンティックHTML</h2>
+
+<p>まず、本文でよく使う基本タグです。全部で100種類以上ありますが、最初はこれだけ知っていれば読めます。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>意味</th><th>タグ</th><th>書き方の例</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>見出し</td>
+      <td><code>h1</code>〜<code>h6</code></td>
+      <td><code>&lt;h2&gt;第2章&lt;/h2&gt;</code>(数字が小さいほど上位)</td>
+    </tr>
+    <tr>
+      <td>段落</td>
+      <td><code>p</code></td>
+      <td><code>&lt;p&gt;本文の一段落。&lt;/p&gt;</code></td>
+    </tr>
+    <tr>
+      <td>リスト</td>
+      <td><code>ul</code> / <code>ol</code> / <code>li</code></td>
+      <td><code>&lt;ul&gt;&lt;li&gt;項目&lt;/li&gt;&lt;/ul&gt;</code>(ulは箇条書き、olは番号付き)</td>
+    </tr>
+    <tr>
+      <td>表</td>
+      <td><code>table</code> / <code>tr</code> / <code>th</code> / <code>td</code></td>
+      <td><code>&lt;tr&gt;&lt;td&gt;セル&lt;/td&gt;&lt;/tr&gt;</code>(trが行、tdがマス)</td>
+    </tr>
+    <tr>
+      <td>画像</td>
+      <td><code>img</code></td>
+      <td><code>&lt;img src="cat.png" alt="猫の写真"&gt;</code>(altは画像の説明文)</td>
+    </tr>
+    <tr>
+      <td>リンク</td>
+      <td><code>a</code></td>
+      <td><code>&lt;a href="/news/"&gt;ニュース&lt;/a&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>セマンティックHTML — ページの構造にも意味を付ける</h3>
+
+<p>
+現在のHTMLには、ページ全体の区画に意味を与えるタグも用意されています。
+これらを使った書き方を<strong>セマンティック(意味論的)HTML</strong>と呼びます。
+</p>
+
+<p class="code-caption">セマンティックタグでページの骨組みを作る</p>
+<pre><code>&lt;body&gt;
+  &lt;header&gt;サイト名やロゴ&lt;/header&gt;
+  &lt;nav&gt;メニュー(ナビゲーション)&lt;/nav&gt;
+  &lt;main&gt;
+    &lt;article&gt;この記事の本文&lt;/article&gt;
+  &lt;/main&gt;
+  &lt;footer&gt;著作権表示など&lt;/footer&gt;
+&lt;/body&gt;</code></pre>
+
+<p>
+人間の目には、区画分けはデザイン(枠線や配置)で伝わります。
+しかし<strong>機械には見た目が見えません</strong>。
+検索エンジンは「<code>main</code> の中が本文だ」と判断して検索順位付けに使い、
+スクリーンリーダー(画面を音声で読み上げるソフト)は「本文へジャンプ」「メニューへジャンプ」という操作を提供できます。
+意味をタグで明示することは、<strong>機械と、機械の助けを借りる人への優しさ</strong>なのです。
+</p>
+</section>
+
+<section id="hypermedia">
+<h2>ハイパーメディアとしてのHTML — aタグとform</h2>
+
+<p>
+HTMLの「HT」はハイパーテキスト(HyperText)。
+<a href="web.html#hypermedia">Webとはのページ</a>で見たとおり、
+<strong>文書の中にリンクを埋め込めること</strong>がHTML最大の特徴であり、Webの本質です。
+リンクの正体は「次にどのURIへ、どんなHTTPリクエストを送るか」の埋め込みです。代表が次の2つです。
+</p>
+
+<h3>aタグ — クリックでGETリクエストになる</h3>
+
+<p class="code-caption">HTML内のリンク</p>
+<pre><code>&lt;a href="/news/2026/07/"&gt;7月のニュース&lt;/a&gt;</code></pre>
+
+<p class="code-caption req">クリックするとブラウザが送るHTTPリクエスト</p>
+<pre class="req"><code>GET /news/2026/07/ HTTP/1.1
+Host: www.example.com
+Accept: text/html</code></pre>
+
+<h3>form — 入力内容がPOSTリクエストになる</h3>
+
+<p>フォームは、ユーザの入力を集めてサーバへ送る仕組みです。
+<code>method</code> 属性がHTTPメソッドを、<code>action</code> 属性が送り先URIを指定します。</p>
+
+<p class="code-caption">お問い合わせフォームのHTML</p>
+<pre><code>&lt;form method="post" action="/contact"&gt;
+  &lt;label&gt;お名前
+    &lt;input type="text" name="name"&gt;
+  &lt;/label&gt;
+  &lt;label&gt;メッセージ
+    &lt;textarea name="message"&gt;&lt;/textarea&gt;
+  &lt;/label&gt;
+  &lt;button type="submit"&gt;送信&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+<p>「佐藤花子」「こんにちは」と入力して送信ボタンを押すと、ブラウザはこんなHTTPリクエストを組み立てて送ります。</p>
+
+<p class="code-caption req">送信されるHTTPリクエスト(日本語は%表記に変換されて運ばれる)</p>
+<pre class="req"><code>POST /contact HTTP/1.1
+Host: www.example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 95
+
+name=%E4%BD%90%E8%97%A4%E8%8A%B1%E5%AD%90&amp;message=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF</code></pre>
+
+<p>ボディの <code>%E4%BD%90...</code> は「佐藤花子」をパーセントエンコーディング
+(URIで使えない文字を%付きの16進数で表す方式 → <a href="uri.html">URIのページ</a>)した姿です。
+<code>name=値</code> のペアが <code>&amp;</code> でつながれています。</p>
+
+<div class="point">
+<p>aタグもformも、正体は<strong>「次に送るべきHTTPリクエストの設計図」をHTML内に埋め込んだもの</strong>です。
+ユーザはHTTPを知らなくても、リンクを押し、フォームを送るだけでWebを渡り歩けます。
+「次に取れる行動をレスポンス自身が教えてくれる」——このハイパーメディアの性質は、
+<a href="rest.html">REST</a>で学ぶ重要な設計原則につながります。</p>
+</div>
+</section>
+
+<section id="formats">
+<h2>HTML以外の表現フォーマット — XML・JSONと現在の姿</h2>
+
+<p>
+リソースの表現はHTMLだけではありません。
+書籍第4部では、プログラム向けの表現として<strong>XML(Extensible Markup Language)</strong>系の
+フォーマットが中心的に扱われていました。現在の主役は<strong>JSON(JavaScript Object Notation)</strong>です。
+同じ「ユーザ123さん」というリソースを両方で書き比べてみましょう。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">XMLでの表現 — タグで意味を示す(書籍時代の主役)</p>
+<pre><code>&lt;user&gt;
+  &lt;id&gt;123&lt;/id&gt;
+  &lt;name&gt;佐藤花子&lt;/name&gt;
+  &lt;joined&gt;2024-04-01&lt;/joined&gt;
+&lt;/user&gt;</code></pre>
+</div>
+<div>
+<p class="code-caption">JSONでの表現 — 名前と値のペアで示す(現在の主役)</p>
+<pre><code>{
+  "id": 123,
+  "name": "佐藤花子",
+  "joined": "2024-04-01"
+}</code></pre>
+</div>
+</div>
+
+<p>
+XMLはHTMLの親戚で厳密さが持ち味ですが、記述が冗長でした。
+JSONは軽量で、JavaScriptからそのまま扱えるため、Web APIの表現として標準の座に就きました
+(→ <a href="ajax.html">Ajaxのページ</a>で実際に使います)。
+</p>
+
+<h3>HTMLに機械向けの意味を埋め込む — 過去と現在</h3>
+
+<p>
+書籍ではmicroformats(HTMLの属性にメタデータを埋め込む規約)やAtom(XMLベースの更新情報フォーマット)も
+紹介されていました。これらは「<strong>人間向けのHTMLやXMLに、機械が読める意味を埋め込む試み</strong>」でした。
+考え方はそのまま、現在は次の2つに受け継がれています。
+</p>
+
+<p class="code-caption">OGP — SNSに投稿するとリンクカードが出る仕組み(head内のmetaタグ)</p>
+<pre><code>&lt;meta property="og:title" content="Web学習サイトを公開しました"&gt;
+&lt;meta property="og:description" content="HTTP・URI・HTMLを体系的に学べます。"&gt;
+&lt;meta property="og:image" content="https://example.com/images/card.png"&gt;</code></pre>
+
+<p class="code-caption">JSON-LD — 検索エンジン向けの構造化データ(head内に埋め込むJSON)</p>
+<pre><code>&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Web学習サイトを公開しました",
+  "datePublished": "2026-07-01"
+}
+&lt;/script&gt;</code></pre>
+
+<p>
+SNSでリンクを貼ると画像付きカードが表示されるのはOGPを、
+検索結果にレシピの調理時間やイベント日程が出るのはJSON-LDを、それぞれのサービスが読んでいるからです。
+「同じHTMLの中に、人間向けの表現と機械向けの表現が同居している」わけです。
+</p>
+</section>
+
+<section id="modern-html">
+<h2>現在のHTML標準 — Living Standardの時代</h2>
+
+<div class="modern">
+<p><strong>バージョン番号は廃止されました。</strong>
+書籍刊行の2010年ごろは「HTML5」の登場前夜でしたが、現在のHTML仕様はWHATWGが管理する
+<strong>HTML Living Standard</strong>という「常時更新される1つの標準」になっています(2019年にW3Cから一本化)。
+「HTML5」は現在では特定のバージョンではなく、この現代的なHTML一式を指す通称として残っています。</p>
+<p><strong>アクセシビリティへの注目。</strong>
+セマンティックHTMLに加えて、<strong>WAI-ARIA</strong>(支援技術向けに役割や状態を属性で伝える仕様)の重要性が高まっています。
+たとえば <code>aria-current="page"</code> は「ナビゲーションの中で現在いるページ」を読み上げソフトに伝えます。
+誰にとっても使えることが、現在のHTMLの品質基準です。</p>
+<p><strong>Web Components。</strong>
+独自のタグ(カスタム要素)を定義して部品として再利用する仕組みも標準化されています。
+HTMLは「決められたタグを使う言語」から「部品を組み立てられる基盤」へと進化を続けています。</p>
+</div>
+
+<div class="note">
+<p>次のページでは、この「表現」を組み合わせる側の視点、つまり
+URI・HTTP・HTMLを<strong>どう設計に活かすか</strong>という考え方(REST)に進みます。
+HTMLのリンクとフォームが持つ「次の行動を教える力」が、そこで再登場します。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="http.html"><span class="nav-dir">前のページ</span>HTTP — Webの配送プロトコル</a>
+  <a class="next" href="rest.html"><span class="nav-dir">次のページ</span>REST — Webの設計思想</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

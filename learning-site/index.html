@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全体像 | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="HTTP・URI・HTML・RESTがWebの技術体系のどこに位置するのかを、初級者向けに一枚の地図として整理した学習サイトです。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html" aria-current="page">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<h1>HTTP・URI・HTML・REST — まず「全体の地図」を手に入れよう</h1>
+
+<p class="lead">
+Webの勉強を始めると、HTTP、URI、HTML、REST、JSON、Ajax……と用語が次々に出てきて、
+「それぞれが何で、どう関係しているのか」が分からなくなりがちです。
+このサイトは、書籍『Webを支える技術』(山本陽平 著)の内容をベースに、
+これらの用語を<strong>ひとつの技術体系の地図</strong>として整理し、
+最新のWeb事情も踏まえて初級者向けに解説します。
+このページはその地図の「全体図」です。細かい話に入る前に、まずここで位置関係をつかみましょう。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#one-sentence">4つのキーワードを一言ずつで言うと</a></li>
+    <li><a href="#analogy">宅配便にたとえて理解する</a></li>
+    <li><a href="#stack">技術スタック図 — どの層に何がいるか</a></li>
+    <li><a href="#compare">比較表 — 何が違うのか</a></li>
+    <li><a href="#pageview">ブラウザでページが表示されるまでに起きること</a></li>
+    <li><a href="#site-vs-api">WebサイトとWeb APIは「同じ仕組みの別の使い方」</a></li>
+    <li><a href="#book-map">書籍『Webを支える技術』との対応と学習ルート</a></li>
+  </ol>
+</div>
+
+<section id="one-sentence">
+<h2>4つのキーワードを一言ずつで言うと</h2>
+
+<p>最初に結論だけ並べます。今は「ふーん」で構いません。このページを読み終わるころには意味がつながります。</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">URI</p>
+    <p>Web上の情報(リソース)の<strong>「住所」</strong>。<br>
+    例: <code>https://example.com/users/123</code></p>
+  </div>
+  <div class="card">
+    <p class="card-title">HTTP</p>
+    <p>その住所とデータをやりとりする<strong>「通信の手順(プロトコル)」</strong>。<br>
+    例: <code>GET /users/123 HTTP/1.1</code></p>
+  </div>
+  <div class="card">
+    <p class="card-title">HTML</p>
+    <p>やりとりされる<strong>「中身」の書き方</strong>のひとつ(人間がブラウザで読むページ用)。<br>
+    例: <code>&lt;h1&gt;プロフィール&lt;/h1&gt;</code></p>
+  </div>
+  <div class="card">
+    <p class="card-title">REST</p>
+    <p>URI・HTTP・HTML(やJSON)を<strong>どう組み合わせて設計するかの「考え方」</strong>。モノではなく設計スタイル。</p>
+  </div>
+</div>
+
+<div class="point">
+<p>4つは「同じ種類のものの選択肢」ではありません。<strong>役割がまったく違う部品と、その組み合わせ方</strong>です。
+「URI か HTTP か」のような二者択一の関係ではなく、<strong>全部が同時に、別の役割で</strong>使われています。
+これが本サイト全体を貫くいちばん大事な視点です。</p>
+</div>
+</section>
+
+<section id="analogy">
+<h2>宅配便にたとえて理解する</h2>
+
+<p>Webでの1回のやりとりは、宅配便で荷物を送ってもらうことによく似ています。</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">URI = 宛先の住所</p>
+    <p>「どこの・何を」を世界中で一意に指し示す。住所が正確なら、誰が書いても同じ場所に届く。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">HTTP = 配送のルール</p>
+    <p>伝票の書き方、「取りに行く(GET)/送る(POST)」などの依頼の種類、不在時(エラー時)の扱いまで決めた共通ルール。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">HTML / JSON = 荷物の中身</p>
+    <p>箱の中身そのもの。人間向けの手紙がHTML、機械(プログラム)向けの部品がJSON、と考えると近い。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">REST = 配送網の設計方針</p>
+    <p>「住所の付け方を統一する」「依頼の種類を共通化する」など、配送網全体がシンプルに回るようにする設計指針。</p>
+  </div>
+</div>
+
+<div class="analogy">
+<p>重要なのは、<strong>住所(URI)・配送ルール(HTTP)・中身(HTML/JSON)は別のもの</strong>だということです。
+住所が同じでも中身は変えられますし、同じ配送ルールでどんな中身でも運べます。
+Webも同じで、この「役割の分離」こそがWebが世界規模に成長できた理由です。
+なお、たとえはあくまで入り口です。正確な定義は各ページで確認してください。</p>
+</div>
+</section>
+
+<section id="stack">
+<h2>技術スタック図 — どの層に何がいるか</h2>
+
+<p>Webの技術は、役割ごとに層(レイヤ)に分けて整理できます。上から「誰が使うか」→「何を」→「どこの」→「どうやって」の順です。</p>
+
+<div class="stack">
+  <div class="layer">
+    <span class="layer-role">利用者</span>
+    <span class="layer-tech">ブラウザ / スマホアプリ / プログラム</span>
+    <span class="layer-desc">Webを利用する側(クライアント)。人間だけでなくプログラムも利用者になる。</span>
+  </div>
+  <div class="layer meta">
+    <span class="layer-role">設計思想</span>
+    <span class="layer-tech">REST</span>
+    <span class="layer-desc">下の3層を「どう組み合わせてWebサービス/Web APIを設計するか」の指針。層というより、全体にかかる方針。→ <a href="rest.html">RESTのページ</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">表現(何を)</span>
+    <span class="layer-tech">HTML / CSS / JavaScript / JSON / 画像・動画</span>
+    <span class="layer-desc">やりとりされるデータの形式。人間向けの表現がHTML、プログラム向けの代表がJSON。→ <a href="html.html">HTML</a> / <a href="ajax.html">Ajax</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">識別(どこの)</span>
+    <span class="layer-tech">URI (URL)</span>
+    <span class="layer-desc">世界中のリソースに一意な名前(住所)を付ける仕組み。→ <a href="uri.html">URIのページ</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">転送(どうやって)</span>
+    <span class="layer-tech">HTTP / HTTPS</span>
+    <span class="layer-desc">URIで示された場所とデータをやりとりする通信プロトコル。HTTPSは暗号化されたHTTP。→ <a href="http.html">HTTPのページ</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">基盤</span>
+    <span class="layer-tech">TCP/IP・DNS・TLS</span>
+    <span class="layer-desc">インターネットそのものの土台。HTTPはこの上に乗っている(詳細は<a href="http.html">HTTPのページ</a>で少しだけ扱います)。</span>
+  </div>
+</div>
+
+<div class="point">
+<p>書籍『Webを支える技術』は、Webを支える最も基本的な技術として
+<strong>「HTTP」「URI」「HTML」の3つ</strong>を挙げ、その全体をまとめる設計思想として<strong>REST</strong>を解説しています。
+この図はまさにその構図です。<strong>REST以外は「実物のある技術」、RESTだけは「考え方」</strong>である点に注目してください。</p>
+</div>
+</section>
+
+<section id="compare">
+<h2>比較表 — 何が違うのか</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr>
+      <th>キーワード</th>
+      <th>ひとことで言うと</th>
+      <th>分類</th>
+      <th>具体例</th>
+      <th>主な標準・出典</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="uri.html">URI</a></td>
+      <td>情報の「住所」(識別子)</td>
+      <td>命名・識別の仕組み</td>
+      <td><code>https://api.example.com/users/123</code></td>
+      <td>RFC 3986 / WHATWG URL Standard</td>
+    </tr>
+    <tr>
+      <td><a href="http.html">HTTP</a></td>
+      <td>住所とやりとりする「配送手順」</td>
+      <td>通信プロトコル</td>
+      <td><code>GET /users/123 HTTP/1.1</code></td>
+      <td>RFC 9110〜9114(HTTP/1.1〜HTTP/3)</td>
+    </tr>
+    <tr>
+      <td><a href="html.html">HTML</a></td>
+      <td>人間向けの「中身」の書き方</td>
+      <td>マークアップ言語(データ形式)</td>
+      <td><code>&lt;h1&gt;こんにちは&lt;/h1&gt;</code></td>
+      <td>HTML Living Standard(WHATWG)</td>
+    </tr>
+    <tr>
+      <td>JSON</td>
+      <td>プログラム向けの「中身」の書き方</td>
+      <td>データ形式</td>
+      <td><code>{"id": 123, "name": "佐藤"}</code></td>
+      <td>RFC 8259</td>
+    </tr>
+    <tr>
+      <td><a href="rest.html">REST</a></td>
+      <td>全体をうまく組み合わせる「設計の考え方」</td>
+      <td>アーキテクチャスタイル</td>
+      <td>「リソースにURIを付け、HTTPの決まったメソッドで操作する」という方針</td>
+      <td>Roy Fielding の博士論文(2000年)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>「分類」の列がすべて違うことに注目してください。比較表の形にしましたが、実際には<strong>比べるものではなく、重ねて使うもの</strong>です。
+たとえば「REST API」とは、「URIとHTTPとJSON(など)を、RESTの考え方に沿って組み合わせて作ったWeb API」のことです。</p>
+</div>
+</section>
+
+<section id="pageview">
+<h2>ブラウザでページが表示されるまでに起きること</h2>
+
+<p>全部の層が一度に働く様子を、実際の流れで見てみましょう。あなたがブラウザで
+<code>https://example.com/news/2026/07/</code> を開いたとき、裏側ではこう動いています。</p>
+
+<ol class="flow">
+  <li><span class="flow-title">URIの入力</span>
+    <span class="flow-desc">アドレスバーのURLは「どのサーバの、どのリソースか」を示す住所(<a href="uri.html">URI</a>)。ブラウザはこれを分解して行き先を決める。</span></li>
+  <li><span class="flow-title">DNSでサーバの居場所を調べる</span>
+    <span class="flow-desc"><code>example.com</code> というドメイン名を、ネットワーク上の住所(IPアドレス)に変換する。</span></li>
+  <li><span class="flow-title">TCP接続とTLSハンドシェイク</span>
+    <span class="flow-desc">サーバと通信路をつなぎ、HTTPSなら暗号化の取り決め(TLS)も行う。ここまでが「電話をかけてつながった」状態。</span></li>
+  <li><span class="flow-title">HTTPリクエストを送る</span>
+    <span class="flow-desc">「このリソースをください(GET)」という依頼文(<a href="http.html">HTTPリクエスト</a>)を送信する。</span></li>
+  <li><span class="flow-title">HTTPレスポンスが返る</span>
+    <span class="flow-desc">サーバが「成功しました(200 OK)」という結果と、中身(<a href="html.html">HTML</a>)を返す。</span></li>
+  <li><span class="flow-title">HTMLを解析し、追加のリソースを取得</span>
+    <span class="flow-desc">ブラウザはHTML内で参照されているCSS・画像・JavaScriptのURIに対して、さらにHTTPリクエストを繰り返す。</span></li>
+  <li><span class="flow-title">画面に描画。その後も同じことの繰り返し</span>
+    <span class="flow-desc">リンクをクリックすれば別のURIへ再びHTTPリクエスト。JavaScriptが裏でWeb APIを呼ぶ(<a href="ajax.html">Ajax</a>)ときも、やっていることは同じ「URIへのHTTPリクエスト」。</span></li>
+</ol>
+
+<p>手順4と5で流れるデータの実物は、たとえばこんなテキストです。</p>
+
+<p class="code-caption req">HTTPリクエスト(ブラウザ → サーバ)</p>
+<pre class="req"><code>GET /news/2026/07/ HTTP/1.1
+Host: example.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...
+Accept: text/html,application/xhtml+xml,...
+Accept-Language: ja,en;q=0.9</code></pre>
+
+<p class="code-caption res">HTTPレスポンス(サーバ → ブラウザ)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 5120
+Cache-Control: max-age=600
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+  &lt;head&gt;&lt;title&gt;2026年7月のニュース&lt;/title&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;2026年7月のニュース&lt;/h1&gt;
+    &lt;a href="/news/2026/07/happy-web"&gt;Web学習サイトが公開されました&lt;/a&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<div class="point">
+<p>Webの通信は、突き詰めれば<strong>「URIに向かってHTTPリクエストを送り、レスポンスとして表現(HTMLやJSON)を受け取る」の繰り返し</strong>です。
+どんなに複雑なWebサービスも、この1往復の積み重ねでできています。</p>
+</div>
+</section>
+
+<section id="site-vs-api">
+<h2>WebサイトとWeb APIは「同じ仕組みの別の使い方」</h2>
+
+<p>初級者がつまずきやすいのが「WebサイトとWeb API(REST API)は別の技術なの?」という疑問です。
+答えは「<strong>仕組みは同じ。返す中身と相手が違うだけ</strong>」です。同じユーザ情報を取得する2つのやりとりを見比べてください。</p>
+
+<h3>人間向け: Webサイト(HTMLを返す)</h3>
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト</p>
+<pre class="req"><code>GET /users/123 HTTP/1.1
+Host: www.example.com
+Accept: text/html</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;body&gt;
+  &lt;h1&gt;佐藤花子さんのプロフィール&lt;/h1&gt;
+  &lt;p&gt;2024年4月に参加しました。&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div>
+</div>
+
+<h3>プログラム向け: Web API(JSONを返す)</h3>
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト</p>
+<pre class="req"><code>GET /users/123 HTTP/1.1
+Host: api.example.com
+Accept: application/json</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "id": 123,
+  "name": "佐藤花子",
+  "joined": "2024-04-01"
+}</code></pre>
+</div>
+</div>
+
+<p>URI・HTTPメソッド・ステータスコードの使い方はまったく同じで、違うのは
+<strong>返ってくる表現(HTMLかJSONか)と、それを読む相手(人間のためのブラウザか、プログラムか)</strong>だけです。
+書籍『Webを支える技術』の言葉では、これは「同じリソースの異なる表現」にあたります。</p>
+
+<div class="modern">
+<p>書籍が書かれた2010年ごろはXMLも有力でしたが、現在のWeb APIの表現は<strong>JSONがほぼ標準</strong>です。
+また、スマホアプリの裏側も実はほとんどがWeb API(HTTPS + JSON)で動いています。
+「Webの技術=ブラウザの技術」ではなく、<strong>アプリやシステム連携を含むインターネット全体の共通基盤</strong>になっているのが現在地です。</p>
+</div>
+</section>
+
+<section id="book-map">
+<h2>書籍『Webを支える技術』との対応と学習ルート</h2>
+
+<p>本サイトは書籍の構成に対応しています。上から順に読むのがおすすめの学習ルートです。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr>
+      <th>順番</th>
+      <th>本サイトのページ</th>
+      <th>学べること</th>
+      <th>書籍の対応箇所</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>全体像(このページ)/ <a href="web.html">Webとは</a></td>
+      <td>Webの成り立ちと技術体系の全体地図</td>
+      <td>第1部 Web概論</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><a href="uri.html">URI</a></td>
+      <td>リソースという考え方、URIの構文と設計</td>
+      <td>第2部 URI</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><a href="http.html">HTTP</a></td>
+      <td>メソッド、ステータスコード、ヘッダ、ステートレス性</td>
+      <td>第3部 HTTP</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><a href="html.html">HTML</a></td>
+      <td>ハイパーメディアとしてのHTML、JSONなどのフォーマット</td>
+      <td>第4部 ハイパーメディアフォーマット</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><a href="rest.html">REST</a></td>
+      <td>アーキテクチャスタイルとしてのREST、6つの制約</td>
+      <td>第1部(第3章)+ 全体を貫くテーマ</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><a href="ajax.html">Ajax</a></td>
+      <td>JavaScriptからHTTPを使う仕組み、fetch、SPA</td>
+      <td>第4部(補完: 最新のブラウザ技術)</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><a href="api-design.html">API設計</a></td>
+      <td>実際にWeb APIを設計する手順とベストプラクティス</td>
+      <td>第5部 Webサービスの設計</td>
+    </tr>
+    <tr>
+      <td>付録</td>
+      <td><a href="glossary.html">用語集</a></td>
+      <td>用語の意味と「どの層の話か」の索引</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>書籍『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社、2010年)は、
+Webの基本設計を学ぶ定番書です。刊行後に大きく変わった部分(HTTPSの標準化、HTTP/2・HTTP/3、XMLからJSONへの移行、
+fetch APIとSPAの普及など)は、各ページの「最新動向」コラムで補足しています。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="next" href="web.html"><span class="nav-dir">次のページ</span>Webとは — 歴史とアーキテクチャ</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>
