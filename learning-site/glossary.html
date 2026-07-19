@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用語集 | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="Web・URI・HTTP・HTML/JSON・REST・Ajax関連の用語を「どの層の話か」というカテゴリ付きで引ける索引です。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html" aria-current="page">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>用語集</h1>
+
+<p class="lead">
+本サイトに登場する用語をまとめた索引です。
+単に意味を並べるのではなく、<strong>「その用語は技術体系のどの層の話か」</strong>を併記するのがこの用語集の方針です。
+そのため五十音順ではなく、全体像ページの地図と同じ<strong>カテゴリ(基盤/識別/転送/表現/設計思想/ブラウザ)ごと</strong>に分けています。
+定義は1〜3文の最小限にとどめ、詳しい解説は各ページへのリンクで案内します。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#foundation">全体・基盤</a></li>
+    <li><a href="#identification">識別(URI)</a></li>
+    <li><a href="#transfer">転送(HTTP)</a></li>
+    <li><a href="#format">表現(フォーマット)</a></li>
+    <li><a href="#design">設計思想(REST/API)</a></li>
+    <li><a href="#dynamic-web">ブラウザ・動的なWeb</a></li>
+  </ol>
+</div>
+
+<div class="point">
+<p>用語を調べるときは、意味と一緒に<strong>「どのカテゴリ(層)に載っているか」</strong>も確認してください。
+たとえば「JSONとHTTPの違いは?」という疑問は、JSONが<strong>表現</strong>の層、HTTPが<strong>転送</strong>の層と分かった時点でほぼ解決します。
+層が違う用語同士は「対立するもの」ではなく「重ねて使うもの」です(→ <a href="index.html">全体像のページ</a>)。</p>
+</div>
+
+<section id="foundation">
+<h2>全体・基盤</h2>
+
+<dl class="term-list">
+  <dt>Web(World Wide Web)</dt>
+  <dd>インターネット上で動く情報システム。文書などの情報(リソース)をハイパーリンクで相互につなぎ、公開・閲覧できるようにした仕組み。1990年ごろにティム・バーナーズ=リーが考案した。→ <a href="web.html">Webとは</a></dd>
+
+  <dt>インターネット(the Internet)</dt>
+  <dd>世界中のネットワーク同士を相互接続した通信網そのもの。Webはその上で動くサービスのひとつであり、両者は別物。→ <a href="web.html">Webとは</a></dd>
+
+  <dt>TCP/IP</dt>
+  <dd>インターネットの基盤となる通信プロトコルの一族。データを小さな単位に分けて相手のコンピュータまで確実に届ける役割を担い、HTTPはこの上に乗って動く。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>DNS(Domain Name System)</dt>
+  <dd>ドメイン名(例: <code>example.com</code>)を、ネットワーク上の実際の住所であるIPアドレスに変換する仕組み。「インターネットの電話帳」にたとえられる。→ <a href="index.html">全体像</a></dd>
+
+  <dt>IPアドレス(IP address)</dt>
+  <dd>ネットワーク上のコンピュータ1台1台を識別する番号。人間には覚えにくいため、普段はドメイン名を使い、DNSで変換する。</dd>
+
+  <dt>クライアント/サーバ(client/server)</dt>
+  <dd>Web通信の役割分担。依頼する側(ブラウザやアプリ)がクライアント、依頼を受けて応答する側がサーバ。やりとりは常にクライアント側から始まる。→ <a href="web.html">Webとは</a></dd>
+
+  <dt>プロトコル(protocol)</dt>
+  <dd>通信の手順やデータ形式の取り決め。双方が同じプロトコルに従うことで、メーカーやOSが違うコンピュータ同士でも会話できる。HTTPやTCP/IPはいずれもプロトコル。</dd>
+
+  <dt>RFC(Request for Comments)</dt>
+  <dd>IETFが発行するインターネット標準の仕様書。番号で管理され、誰でも無料で読める。例: URIはRFC 3986、HTTPはRFC 9110で定義。→ <a href="web.html">Webとは</a></dd>
+
+  <dt>標準化(IETF/WHATWG/W3C)</dt>
+  <dd>Webの仕様をオープンに決める活動と、その担い手の団体。IETFは基盤プロトコル(HTTP・URIなど)、WHATWGはHTMLやブラウザ関連仕様、W3CはCSSなどのWeb技術を担当する。→ <a href="web.html">Webとは</a></dd>
+</dl>
+</section>
+
+<section id="identification">
+<h2>識別(URI)</h2>
+
+<dl class="term-list">
+  <dt>リソース(resource)</dt>
+  <dd>Web上の「名前を付けて指し示せる情報」。ユーザのプロフィール、商品の在庫、今日の天気など。リソースにはURIで名前を付け、実際にやりとりするのはその「表現」。→ <a href="uri.html">URI</a> / <a href="rest.html">REST</a></dd>
+
+  <dt>URI(Uniform Resource Identifier)</dt>
+  <dd>リソースを世界中で一意に識別するための「住所」の書式。RFC 3986で定義。Webのハイパーリンクの行き先はすべてURIで指定される。→ <a href="uri.html">URI</a></dd>
+
+  <dt>URL(Uniform Resource Locator)</dt>
+  <dd>URIのうち、リソースの「場所」で識別するもの。日常で目にするWebのアドレスはほぼすべてURL。厳密にはURIの一種だが、実用上はほぼ同義に使われる。→ <a href="uri.html">URI</a></dd>
+
+  <dt>URN(Uniform Resource Name)</dt>
+  <dd>URIのうち、場所ではなく「名前」で識別するもの。例: 書籍のISBNを表す <code>urn:isbn:...</code>。場所が変わっても識別子が変わらないのが特徴。→ <a href="uri.html">URI</a></dd>
+
+  <dt>スキーム(scheme)</dt>
+  <dd>URIの先頭部分で、リソースへのアクセス手段を示すもの。<code>https://...</code> の <code>https</code> がスキーム。他に <code>http</code>、<code>mailto</code> など。→ <a href="uri.html">URI</a></dd>
+
+  <dt>クエリパラメータ(query parameter)</dt>
+  <dd>URIの <code>?</code> 以降に付ける「名前=値」形式の追加情報。検索条件や並び替えの指定に使う。例: <code>/books?q=web&amp;sort=year</code>。→ <a href="uri.html">URI</a> / <a href="api-design.html">API設計</a></dd>
+
+  <dt>%エンコーディング(percent-encoding)</dt>
+  <dd>URIに使えない文字(日本語や空白など)を <code>%XX</code> 形式で表す変換ルール。例: 「あ」は <code>%E3%81%82</code>。→ <a href="uri.html">URI</a></dd>
+
+  <dt>クールURI(Cool URIs)</dt>
+  <dd>「クールなURIは変わらない」という設計指針。一度公開したURIを変えない・壊さないことで、リンク切れを防ぎ、Webの信頼性を保つ。API設計にも適用される。→ <a href="uri.html">URI</a> / <a href="api-design.html">API設計</a></dd>
+</dl>
+</section>
+
+<section id="transfer">
+<h2>転送(HTTP)</h2>
+
+<dl class="term-list">
+  <dt>HTTP(Hypertext Transfer Protocol)</dt>
+  <dd>URIで示されたリソースとその表現をやりとりするための通信プロトコル。Webの「配送手順」にあたる。現行仕様はRFC 9110などで定義。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>HTTPS</dt>
+  <dd>TLSで暗号化された上でやりとりされるHTTP。盗聴・改ざん・なりすましを防ぐ。現在のWebでは原則としてHTTPSが必須。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>TLS(Transport Layer Security)</dt>
+  <dd>通信を暗号化し、相手が本物であることを証明書で確認するプロトコル。HTTPSの「S」を支える土台。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>リクエスト/レスポンス(request/response)</dt>
+  <dd>HTTP通信の基本単位。クライアントが依頼文(リクエスト)を送り、サーバが結果(レスポンス)を返す1往復。Webのすべてはこの繰り返しでできている。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>HTTPメソッド(HTTP method)</dt>
+  <dd>リクエストの先頭で示す「操作の種類」。GET/POST/PUT/DELETEなど少数に限定されており、これが統一インターフェースを支える。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>GET</dt>
+  <dd>リソースの取得を表すメソッド。リソースの状態を変えない「安全」なメソッドで、結果をキャッシュできる。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>POST</dt>
+  <dd>リソースの新規作成や、その他の処理の依頼を表すメソッド。同じリクエストを繰り返すと結果が変わりうる(冪等でない)点に注意。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>PUT</dt>
+  <dd>リソースを送った内容で置き換える(更新・作成する)メソッド。何度繰り返しても結果が同じ(冪等)。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>DELETE</dt>
+  <dd>リソースの削除を表すメソッド。これも冪等で、何度実行しても「そのリソースが無い」状態に落ち着く。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>ステータスコード(status code)</dt>
+  <dd>レスポンスの先頭で結果の種類を表す3桁の数字。200(成功)、201(作成)、404(見つからない)、500(サーバエラー)など。百の位が大分類を表す。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>ヘッダ(header)</dt>
+  <dd>リクエストやレスポンスに付ける「名前: 値」形式のメタ情報。中身の形式(Content-Type)、キャッシュの指示、認証情報などを運ぶ。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>MIMEタイプ(Content-Type)</dt>
+  <dd>データの種類を表す「大分類/小分類」形式のラベル。例: <code>text/html</code>、<code>application/json</code>。レスポンスではContent-Typeヘッダで伝えられ、受け手はこれを見て解釈方法を決める。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>ステートレス(stateless)</dt>
+  <dd>サーバがクライアントの状態(前回のやりとり)を覚えず、毎回のリクエストに必要な情報をすべて含めさせる方式。サーバを増やしやすくなり、Webの拡張性の要となっている。→ <a href="http.html">HTTP</a> / <a href="rest.html">REST</a></dd>
+
+  <dt>Cookie(クッキー)</dt>
+  <dd>サーバがブラウザに保存させる小さなデータ。次回以降のリクエストに自動で添付され、ステートレスなHTTPの上でログイン状態などを実現するために使われる。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>セッション(session)</dt>
+  <dd>ログインからログアウトまでのような「一連のやりとり」のまとまり。ステートレスなHTTPでは、Cookieなどに載せた識別子でセッションを表現する。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>キャッシュ(cache)</dt>
+  <dd>一度取得したレスポンスを保存して再利用する仕組み。通信を減らして表示を速くし、サーバの負荷を下げる。Cache-ControlヘッダなどでHTTPに組み込まれている。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>ETag(エンティティタグ)</dt>
+  <dd>リソースの版(バージョン)を表す識別子のヘッダ。クライアントが「手元の版はこれ」と伝え、変わっていなければサーバは中身を送らずに済む(条件付きリクエスト)。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>冪等性(べきとうせい、idempotence)</dt>
+  <dd>同じ操作を何度繰り返しても結果が同じになる性質。GET・PUT・DELETEは冪等、POSTは冪等でない。通信失敗時に安心して再送できるかどうかの判断基準になる。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>安全性(safety)</dt>
+  <dd>その操作がリソースの状態を変えない性質。GETは安全なメソッドであり、だからこそ検索エンジンの巡回やキャッシュが成り立つ。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>HTTP/2</dt>
+  <dd>2015年に標準化されたHTTPの新しい版。1つの接続で複数のやりとりを並行して運べるようにし、高速化した。メソッドやステータスコードの意味は変わらない。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>HTTP/3</dt>
+  <dd>2022年に標準化された最新版。土台の通信方式をTCPからQUIC(UDPベース)に替えてさらに高速化した。これも「意味の部分」はHTTP/1.1から不変。→ <a href="http.html">HTTP</a></dd>
+</dl>
+</section>
+
+<section id="format">
+<h2>表現(フォーマット)</h2>
+
+<dl class="term-list">
+  <dt>HTML(HyperText Markup Language)</dt>
+  <dd>Webページの中身を記述するマークアップ言語で、人間向けの代表的な「表現」。リンクを埋め込めるためハイパーメディアを実現できる。仕様はWHATWGのHTML Living Standard。→ <a href="html.html">HTML</a></dd>
+
+  <dt>タグ(tag)</dt>
+  <dd>HTMLで文書に意味を付ける印。<code>&lt;h1&gt;</code>(見出し)や <code>&lt;a&gt;</code>(リンク)のように、山かっこで要素を挟んで使う。→ <a href="html.html">HTML</a></dd>
+
+  <dt>マークアップ(markup)</dt>
+  <dd>文章に「ここは見出し」「ここはリンク」といった構造の印を付けていくこと。HTMLはマークアップのための言語。→ <a href="html.html">HTML</a></dd>
+
+  <dt>セマンティックHTML(semantic HTML)</dt>
+  <dd>見た目ではなく「意味」に基づいてタグを選ぶ書き方。検索エンジンや読み上げソフトなど、プログラムにも文書の構造が伝わるようになる。→ <a href="html.html">HTML</a></dd>
+
+  <dt>CSS(Cascading Style Sheets)</dt>
+  <dd>HTMLの「見た目」(色・配置・文字サイズなど)を指定する言語。構造(HTML)と見た目(CSS)を分けるのが現在の標準的な作法。→ <a href="html.html">HTML</a></dd>
+
+  <dt>JavaScript</dt>
+  <dd>ブラウザ上で動くプログラミング言語。ページの書き換えやWeb APIの呼び出しなど、Webに「動き」を与える。RESTの制約「コードオンデマンド」の実例でもある。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>DOM(Document Object Model)</dt>
+  <dd>ブラウザが読み込んだHTMLを、JavaScriptから操作できるようにした木構造のデータ。DOMを書き換えると画面の表示が変わる。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>XML(Extensible Markup Language)</dt>
+  <dd>データ交換用の汎用マークアップ言語。書籍刊行の2010年ごろはWeb APIの表現の有力候補だったが、現在はより軽量なJSONが主流。→ <a href="html.html">HTML</a></dd>
+
+  <dt>JSON(JavaScript Object Notation)</dt>
+  <dd>「名前と値の組」でデータを表す軽量なデータ形式。RFC 8259で定義。現在のWeb APIにおけるプログラム向けの表現の事実上の標準。→ <a href="html.html">HTML</a> / <a href="api-design.html">API設計</a></dd>
+
+  <dt>ハイパーメディア(hypermedia)</dt>
+  <dd>文書・画像などの情報をリンクで相互につないだシステム。読者はリンクをたどって情報から情報へ自由に移動できる。Webの本質のひとつ。→ <a href="web.html">Webとは</a></dd>
+
+  <dt>ハイパーリンク(hyperlink)</dt>
+  <dd>ある情報から別の情報への参照。HTMLでは <code>&lt;a href="..."&gt;</code> で表し、行き先はURIで指定する。単に「リンク」とも。→ <a href="html.html">HTML</a></dd>
+</dl>
+</section>
+
+<section id="design">
+<h2>設計思想(REST/API)</h2>
+
+<dl class="term-list">
+  <dt>REST(REpresentational State Transfer)</dt>
+  <dd>Roy Fieldingが2000年の博士論文で整理した、Webの設計原則(アーキテクチャスタイル)。6つの制約の組み合わせとして定義され、名前は「表現による状態の転送」を意味する。→ <a href="rest.html">REST</a></dd>
+
+  <dt>RESTful(レストフル)</dt>
+  <dd>「RESTの原則に沿っている」ことを表す形容詞。リソースにURIを付け、統一インターフェースで操作する設計になっているAPIを「RESTfulなAPI」と呼ぶ。→ <a href="rest.html">REST</a></dd>
+
+  <dt>アーキテクチャスタイル(architectural style)</dt>
+  <dd>個別のシステムではなく、設計の「型・様式」のこと。建築における和風・洋風のような様式にあたる。RESTはWebというシステム群のアーキテクチャスタイル。→ <a href="rest.html">REST</a></dd>
+
+  <dt>統一インターフェース(uniform interface)</dt>
+  <dd>限られた共通のメソッド(GET/POST/PUT/DELETEなど)だけで、あらゆるリソースを同じ作法で操作するというRESTの中心的な制約。初見のAPIでも操作を推測できる根拠。→ <a href="rest.html">REST</a></dd>
+
+  <dt>CRUD(クラッド)</dt>
+  <dd>データ管理の4つの基本操作 Create(作成)/Read(読み取り)/Update(更新)/Delete(削除)の頭文字。HTTPメソッドのPOST/GET/PUT/DELETEときれいに対応する。→ <a href="rest.html">REST</a></dd>
+
+  <dt>エンドポイント(endpoint)</dt>
+  <dd>APIの窓口となる個々のURI(とメソッドの組)。例: <code>GET /books/42</code>。エンドポイントの一覧がAPI仕様の骨格になる。→ <a href="api-design.html">API設計</a></dd>
+
+  <dt>Web API</dt>
+  <dd>プログラム同士がHTTPでデータをやりとりするための窓口。人間向けのWebサイトと同じ仕組み(URI+HTTP+表現)を、JSONなどのプログラム向け表現で使うもの。→ <a href="index.html">全体像</a> / <a href="api-design.html">API設計</a></dd>
+
+  <dt>HATEOAS</dt>
+  <dd>Hypermedia As The Engine Of Application State の略。レスポンスの中に「次に辿れるリンク」を含め、クライアントがリンクを辿って操作を進められるようにする設計。REST成熟度モデルの最上位レベル。→ <a href="rest.html">REST</a></dd>
+
+  <dt>成熟度モデル(Richardson Maturity Model)</dt>
+  <dd>APIが「どこまでRESTの原則に従っているか」をレベル0〜3で測る物差し。実務ではレベル2(メソッドとステータスコードの正しい使い分け)が事実上の標準。→ <a href="rest.html">REST</a></dd>
+
+  <dt>バージョニング(versioning)</dt>
+  <dd>APIの版数を管理し、新旧仕様を並行運用できるようにすること。URIに <code>/v1/</code> を入れる方式が主流。→ <a href="api-design.html">API設計</a></dd>
+
+  <dt>ページネーション(pagination)</dt>
+  <dd>一覧系APIで、大量の結果を「1ページ分ずつ」小分けにして返す仕組み。<code>page</code>/<code>per_page</code> や <code>limit</code>/<code>offset</code> といったクエリパラメータで指定する。→ <a href="api-design.html">API設計</a></dd>
+
+  <dt>OpenAPI</dt>
+  <dd>APIの仕様書を機械可読(YAML/JSON)に書くための標準。旧称Swagger。ドキュメント自動生成・コード生成・モック作成の起点として現在の実務で広く使われる。→ <a href="api-design.html">API設計</a></dd>
+
+  <dt>GraphQL</dt>
+  <dd>クライアントがクエリ(問い合わせ文)を書き、必要なデータだけをまとめて取得できるAPIスタイル。RESTとは別のアプローチだが、HTTPの上で動く点は同じ。→ <a href="rest.html">REST</a></dd>
+
+  <dt>gRPC</dt>
+  <dd>関数呼び出しのように相手サーバの処理を呼ぶ、高速なバイナリ通信の仕組み。データセンター内部のサービス間通信で使われることが多い。→ <a href="rest.html">REST</a></dd>
+</dl>
+</section>
+
+<section id="dynamic-web">
+<h2>ブラウザ・動的なWeb</h2>
+
+<dl class="term-list">
+  <dt>Ajax(エイジャックス、Asynchronous JavaScript + XML)</dt>
+  <dd>JavaScriptがページを再読み込みせずにHTTP通信を行い、画面の一部だけを更新する技法。2005年ごろのGoogle マップで広く知られた。名前にXMLとあるが現在のやりとりはほぼJSON。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>fetch API</dt>
+  <dd>JavaScriptからHTTPリクエストを送るための現在標準の機能。<code>fetch(url)</code> と書くだけでWeb APIを呼び出せる。旧来のXMLHttpRequestを置き換えた。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>XMLHttpRequest</dt>
+  <dd>fetch API以前に使われていた、JavaScriptからHTTP通信を行うための機能。Ajaxという言葉が生まれた当時の主役で、現在は主に古いコードで見かける。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>非同期通信(asynchronous communication)</dt>
+  <dd>通信の完了を待たずに他の処理を進め、結果が届いたら続きを実行するやり方。画面が固まらないWebアプリの基本であり、Ajaxの「A」にあたる。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>SPA(Single Page Application)</dt>
+  <dd>最初に1枚のHTMLとJavaScriptを読み込み、以降はJavaScriptがWeb APIを呼んで画面を書き換え続けるWebアプリの形。「サイトとしてのWeb」と「APIとしてのWeb」が1つのサービス内で同時に動く。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>CORS(Cross-Origin Resource Sharing)</dt>
+  <dd>ブラウザ上のJavaScriptが「別のオリジン」のAPIを呼ぶことを、サーバ側の許可に基づいて安全に認める仕組み。許可がなければブラウザが通信結果の利用を遮断する。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>オリジン(origin)</dt>
+  <dd>スキーム+ホスト名+ポート番号の組で表される「サイトの出どころ」。例: <code>https://example.com</code>。ブラウザのセキュリティはオリジン単位で区切られている。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>WebSocket</dt>
+  <dd>クライアントとサーバが接続をつなぎっぱなしにして、双方向にデータを送り合えるプロトコル。チャットや通知など「サーバ側から話しかけたい」場面で使う。リクエスト/レスポンス型のHTTPを補う存在。→ <a href="ajax.html">Ajax</a></dd>
+</dl>
+
+<div class="modern">
+<p>このカテゴリの用語(fetch API、SPA、CORS、WebSocketなど)や、設計思想カテゴリのOpenAPI・GraphQL・gRPC、
+転送カテゴリのHTTP/2・HTTP/3は、いずれも<strong>書籍『Webを支える技術』(2010年)の刊行後に登場・定着した用語</strong>です。
+新しい用語が増えても、それらはすべて「識別=URI・転送=HTTP・表現=フォーマット・設計思想=REST」という
+本サイトの地図のどこかに収まります。新語に出会ったら、まず「どの層の話か」を考えてみてください。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="api-design.html"><span class="nav-dir">前のページ</span>API設計 — Web APIを設計する</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>
