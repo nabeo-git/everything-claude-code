@@ -23,6 +23,7 @@ npx serve learning-site
 | `http.html` | HTTP — メソッド、ステータスコード、ヘッダ、ステートレス性 | 第3部 HTTP |
 | `html.html` | HTML — リソースの表現、ハイパーメディア、JSON との比較 | 第4部 ハイパーメディアフォーマット |
 | `rest.html` | REST — アーキテクチャスタイル、6 つの制約、REST API 実例 | 第1部第3章ほか |
+| `rpc.html` | RPC/SOAP — HTTP POST をトンネルにする SOAP・XML-RPC、REST との対比、「POST の誤用?」論点 | 第3部・第7部(RESTとRPCの対比) |
 | `ajax.html` | Ajax — fetch のコードと実際の HTTP メッセージの対応、CORS、SPA | 第4部(現代補完) |
 | `api-design.html` | API設計 — 架空の書店 API を題材にした設計手順 | 第5部 Webサービスの設計 |
 | `glossary.html` | 用語集 — 各用語が「どの層の話か」を併記した索引 | — |

@@ -18,6 +18,7 @@
       <a href="http.html">HTTP</a>
       <a href="html.html">HTML</a>
       <a href="rest.html" aria-current="page">REST</a>
+      <a href="rpc.html">RPC/SOAP</a>
       <a href="ajax.html">Ajax</a>
       <a href="api-design.html">API設計</a>
       <a href="glossary.html">用語集</a>
@@ -491,9 +492,9 @@ Webサイトを30年支えてきた仕組み(URI・HTTP・キャッシュ・リ�
       <td>データセンター内部のサービス間(マイクロサービス)の高速通信。人間が直接読む用途には不向き。</td>
     </tr>
     <tr>
-      <td>RPCスタイル</td>
-      <td>「命令名+引数」を送る古典的な形(成熟度モデルのレベル0に相当)</td>
-      <td>操作が「リソースの取得・更新」に整理しづらい、手続き中心の社内APIなど。</td>
+      <td>RPCスタイル<br>(SOAP / XML-RPC など)</td>
+      <td>「命令名+引数」を送る古典的な形(成熟度モデルのレベル0に相当)。HTTPを通り道として使う。</td>
+      <td>操作が「リソースの取得・更新」に整理しづらい、手続き中心の社内API・企業間連携など。→ <a href="rpc.html">RPC・SOAPのページ</a>で詳説。</td>
     </tr>
   </tbody>
 </table>
@@ -505,14 +506,15 @@ GraphQLもgRPCもHTTPの上で動いており、URI・HTTP・表現という土�
 </div>
 
 <p>
-次の <a href="ajax.html">Ajaxのページ</a>では、ブラウザの中のJavaScriptがこうしたAPIを呼ぶ仕組みを、
-その次の <a href="api-design.html">API設計のページ</a>では、RESTの原則を実際のAPI設計に落とし込む手順を学びます。
+次の <a href="rpc.html">RPC・SOAP・XML-RPCのページ</a>では、RESTとは対照的に「HTTPのPOSTをトンネルにして命令を送る」
+もう一つの設計思想を掘り下げます。その後の <a href="ajax.html">Ajaxのページ</a>では、ブラウザの中のJavaScriptがこうしたAPIを呼ぶ仕組みを、
+<a href="api-design.html">API設計のページ</a>では、RESTの原則を実際のAPI設計に落とし込む手順を学びます。
 </p>
 </section>
 
 <nav class="page-nav">
   <a class="prev" href="html.html"><span class="nav-dir">前のページ</span>HTML — リソースの表現とハイパーメディア</a>
-  <a class="next" href="ajax.html"><span class="nav-dir">次のページ</span>Ajax — JavaScriptがHTTPを使う仕組み</a>
+  <a class="next" href="rpc.html"><span class="nav-dir">次のページ</span>RPC・SOAP・XML-RPC — HTTPをトンネルとして使う技術</a>
 </nav>
 
 </main>

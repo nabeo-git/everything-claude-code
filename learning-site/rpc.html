@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPC・SOAP・XML-RPC | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="SOAPとXML-RPCを「HTTPのPOSTをトンネルにしてRPCを載せた技術」として体系的に解説。仕組み・成り立ち・現在の使われ方、そしてRESTの視点から見た『POSTの誤用か?』という論点までを初級者向けに整理します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="rpc.html" aria-current="page">RPC/SOAP</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item hl">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item hl">設計思想 = REST</span>
+</div>
+
+<h1>RPC・SOAP・XML-RPC — HTTPを「トンネル」として使う技術</h1>
+
+<p class="lead">
+<a href="rest.html">RESTのページ</a>では、URIでリソースに名前を付け、GET・POST・PUT・DELETEを使い分ける設計を学びました。
+ところが世の中には、<strong>HTTPのPOSTだけを「運び屋」として使い、その中に独自の命令をくるんで送る</strong>という、
+まったく別の発想の技術があります。その代表が<strong>XML-RPC</strong>と<strong>SOAP</strong>です。
+これらは歴史的にRESTと同じ2000年前後に登場し、一時はWeb APIの主役でした。
+このページでは、これらが「どういうプロトコルで」「どう生まれ」「今どう使われ」「内部でどう動くのか」を、
+HTTPの知識の延長として体系的に整理します。そして最後に、初級者がよく疑問に思う
+<strong>「HTTPのPOSTを使い倒すのは、本来の原則からすると誤用なのか?」</strong>という論点に、RESTの視点から答えます。
+</p>
+
+<div class="toc">
+  <p class="toc-title">このページの内容</p>
+  <ol>
+    <li><a href="#rpc-idea">RPCという発想 — 「遠くの関数を呼ぶ」</a></li>
+    <li><a href="#xml-rpc">XML-RPC — 最小のHTTP-RPC</a></li>
+    <li><a href="#soap">SOAP — エンタープライズ向けのRPC/メッセージング</a></li>
+    <li><a href="#tunnel">仕組みの共通点 — HTTPを「トンネル」にする</a></li>
+    <li><a href="#misuse">「HTTP POSTの誤用」なのか? — RESTの視点から</a></li>
+    <li><a href="#history">成り立ちと勢力図の変遷</a></li>
+    <li><a href="#today">現在の使われ方 — 今どこで動いているか</a></li>
+  </ol>
+</div>
+
+<section id="rpc-idea">
+<h2>RPCという発想 — 「遠くの関数を呼ぶ」</h2>
+
+<p>
+まず土台となる<strong>RPC(Remote Procedure Call、遠隔手続き呼び出し)</strong>という考え方から始めます。
+プログラムでは、自分の書いた関数を <code>getUser(123)</code> のように呼び出しますね。
+RPCとは、この関数呼び出しを<strong>ネットワークの向こう側にある別のコンピュータで実行する</strong>仕組みです。
+手元で <code>getUser(123)</code> と書くと、裏側でその「命令名(getUser)」と「引数(123)」がネットワークを渡り、
+遠くのサーバで処理され、結果が返ってくる——あたかもローカルの関数のように、と見せかけるのが狙いです。
+</p>
+
+<div class="analogy">
+<p>RPCは<strong>「遠くの家電を操作するリモコン」</strong>のようなものです。
+ボタン(関数)を押すと、離れた場所にある機械が動く。利用者は電波(ネットワーク)のことを意識せず、
+手元のリモコンを操作する感覚のまま遠隔の処理を呼び出せます。
+この「距離を感じさせない」ことがRPCの理想です。</p>
+</div>
+
+<p>
+ここで<a href="rest.html">REST</a>との根本的な違いが見えてきます。両者は「何を中心に考えるか」が正反対です。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>観点</th><th>REST(リソース指向)</th><th>RPC(手続き指向)</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>中心に置くもの</td>
+      <td><strong>名詞</strong>(リソース=モノ)</td>
+      <td><strong>動詞</strong>(手続き=動作)</td>
+    </tr>
+    <tr>
+      <td>考え方</td>
+      <td>「ユーザ123という<em>モノ</em>を GET する」</td>
+      <td>「getUser という<em>動作</em>を 123 を引数に呼ぶ」</td>
+    </tr>
+    <tr>
+      <td>URIの役割</td>
+      <td>操作対象(リソース)を指す住所<br><code>/users/123</code></td>
+      <td>命令の受付窓口。1つで十分<br><code>/api</code> や <code>/RPC2</code></td>
+    </tr>
+    <tr>
+      <td>「何をするか」の決め方</td>
+      <td>URI + HTTPメソッド</td>
+      <td>ボディに書いた命令名</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>RPCという発想自体は、Webよりずっと古く1980年代からあります(Sun RPC、後のCORBAやDCOMなど)。
+ただし当時のRPCは独自のネットワークの通り道(専用ポート)を使っており、
+会社のファイアウォールに阻まれて外部とつながりにくい弱点がありました。
+そこで「<strong>どこの環境でもたいてい通れるHTTP(ポート80/443)に相乗りしよう</strong>」と考えて生まれたのが、
+これから見るXML-RPCとSOAPです。この「HTTPに相乗り」という発想が、後の論点すべての出発点になります。</p>
+</div>
+</section>
+
+<section id="xml-rpc">
+<h2>XML-RPC — 最小のHTTP-RPC</h2>
+
+<p>
+<strong>XML-RPC</strong>は1998年に登場した、非常にシンプルなRPCの仕様です。
+名前のとおり「<strong>XML</strong>で命令を書き、<strong>RPC</strong>(遠隔手続き呼び出し)を行う」もので、
+やることはたった一つ——<strong>「呼びたい命令名」と「引数」をXMLで表現し、HTTPのPOSTで送る</strong>だけです。
+</p>
+
+<h3>仕組み</h3>
+<ul>
+  <li>リクエストは <code>&lt;methodCall&gt;</code> 要素に、<code>&lt;methodName&gt;</code>(命令名)と <code>&lt;params&gt;</code>(引数)を書く</li>
+  <li>レスポンスは <code>&lt;methodResponse&gt;</code> 要素で返す</li>
+  <li>送り先のURI(エンドポイント)は<strong>いつも1つ</strong>。何を呼ぶかはURIではなくボディの中の命令名で決まる</li>
+</ul>
+
+<p>実際に「ID 123 のユーザ情報を取得する(getUser)」を呼ぶと、ネットワークにはこんなメッセージが流れます。</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption req">リクエスト(クライアント → サーバ)</p>
+<pre class="req"><code>POST /RPC2 HTTP/1.1
+Host: api.example.com
+Content-Type: text/xml
+Content-Length: 168
+
+&lt;?xml version="1.0"?&gt;
+&lt;methodCall&gt;
+  &lt;methodName&gt;getUser&lt;/methodName&gt;
+  &lt;params&gt;
+    &lt;param&gt;
+      &lt;value&gt;&lt;int&gt;123&lt;/int&gt;&lt;/value&gt;
+    &lt;/param&gt;
+  &lt;/params&gt;
+&lt;/methodCall&gt;</code></pre>
+</div>
+<div>
+<p class="code-caption res">レスポンス(サーバ → クライアント)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/xml
+Content-Length: 241
+
+&lt;?xml version="1.0"?&gt;
+&lt;methodResponse&gt;
+  &lt;params&gt;&lt;param&gt;&lt;value&gt;&lt;struct&gt;
+    &lt;member&gt;
+      &lt;name&gt;id&lt;/name&gt;
+      &lt;value&gt;&lt;int&gt;123&lt;/int&gt;&lt;/value&gt;
+    &lt;/member&gt;
+    &lt;member&gt;
+      &lt;name&gt;name&lt;/name&gt;
+      &lt;value&gt;&lt;string&gt;佐藤花子&lt;/string&gt;&lt;/value&gt;
+    &lt;/member&gt;
+  &lt;/struct&gt;&lt;/value&gt;&lt;/param&gt;&lt;/params&gt;
+&lt;/methodResponse&gt;</code></pre>
+</div>
+</div>
+
+<p>
+注目してほしいのは、<a href="uri.html">URI</a>が <code>/RPC2</code> という<strong>1つだけ</strong>で、
+リクエストラインが常に <code>POST /RPC2</code> になっている点です。
+<a href="http.html">HTTPのページ</a>で学んだ「GETで取得、DELETEで削除」といったメソッドの使い分けは一切ありません。
+「何をするか」はすべて、ボディの <code>&lt;methodName&gt;</code> に書かれています。
+</p>
+
+<p>エラーが起きたときも、XML-RPCは独特です。命令が失敗しても、<strong>HTTPのステータスは 200 OK のまま</strong>で、
+失敗の中身はボディの <code>&lt;fault&gt;</code>(フォールト=障害)要素で伝えます。</p>
+
+<p class="code-caption res">エラー時のレスポンス(HTTPは200のまま、中身で失敗を伝える)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/xml
+
+&lt;?xml version="1.0"?&gt;
+&lt;methodResponse&gt;
+  &lt;fault&gt;&lt;value&gt;&lt;struct&gt;
+    &lt;member&gt;
+      &lt;name&gt;faultCode&lt;/name&gt;
+      &lt;value&gt;&lt;int&gt;404&lt;/int&gt;&lt;/value&gt;
+    &lt;/member&gt;
+    &lt;member&gt;
+      &lt;name&gt;faultString&lt;/name&gt;
+      &lt;value&gt;&lt;string&gt;ユーザが見つかりません&lt;/string&gt;&lt;/value&gt;
+    &lt;/member&gt;
+  &lt;/struct&gt;&lt;/value&gt;&lt;/fault&gt;
+&lt;/methodResponse&gt;</code></pre>
+
+<div class="point">
+<p>ここがXML-RPC(そして次のSOAP)を理解する核心です。
+<strong>「見つからなかった」という結果を、HTTPの <code>404</code> ではなく、ボディの中の <code>faultCode</code> で伝えている</strong>——
+つまりHTTPは中身を運ぶだけの通り道で、成功も失敗もHTTPの外側(ボディ)で判断しています。
+これは<a href="rest.html#restful">RESTの成熟度モデルでいう「レベル0」</a>、
+「HTTPをただの通り道として使う」状態そのものです。良い悪いは<a href="#misuse">後のセクション</a>で検討します。</p>
+</div>
+</section>
+
+<section id="soap">
+<h2>SOAP — エンタープライズ向けのRPC/メッセージング</h2>
+
+<p>
+<strong>SOAP</strong>は、XML-RPCとほぼ同時期(1998〜2000年)に、Microsoftなどが中心となって作った
+より本格的なXMLメッセージング仕様です。当初は「Simple Object Access Protocol(シンプルなオブジェクトアクセスプロトコル)」の
+略でしたが、実態はまったくシンプルではなくなったため、バージョン1.2からは<strong>「SOAP」という略さない固有名詞</strong>になりました。
+XML-RPCが「最小限」なら、SOAPは「企業システムの厳しい要求(セキュリティ・信頼性・契約)にすべて応える重装備」です。
+</p>
+
+<h3>仕組み — Envelope(封筒)構造</h3>
+<p>SOAPメッセージは、手紙を封筒に入れるように、必ず <code>Envelope</code>(封筒)で全体を包みます。</p>
+
+<div class="stack">
+  <div class="layer">
+    <span class="layer-role">Envelope</span>
+    <span class="layer-tech">soap:Envelope(封筒。全体を包む一番外側)</span>
+    <span class="layer-desc">この中に Header と Body が入る。</span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">Header(任意)</span>
+    <span class="layer-tech">soap:Header(添え状=メタデータ)</span>
+    <span class="layer-desc">認証情報、トランザクションID、署名など「本文以外の付帯情報」を入れる。WS-Security等の拡張はここを使う。</span>
+  </div>
+  <div class="layer hl">
+    <span class="layer-role">Body(必須)</span>
+    <span class="layer-tech">soap:Body(本文=呼び出したい処理そのもの)</span>
+    <span class="layer-desc">呼びたい操作と引数、または結果。失敗時はここに soap:Fault(障害情報)が入る。</span>
+  </div>
+</div>
+
+<p>「ID 123 のユーザを取得する」をSOAPで呼ぶと、こうなります。XML-RPCより格段に情報量が多いことに注目してください。</p>
+
+<p class="code-caption req">リクエスト(クライアント → サーバ)</p>
+<pre class="req"><code>POST /UserService HTTP/1.1
+Host: api.example.com
+Content-Type: application/soap+xml; charset=utf-8
+Content-Length: 420
+SOAPAction: "http://example.com/users/GetUser"
+
+&lt;?xml version="1.0"?&gt;
+&lt;soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"&gt;
+  &lt;soap:Header&gt;
+    &lt;auth:Token xmlns:auth="http://example.com/auth"&gt;abc123xyz&lt;/auth:Token&gt;
+  &lt;/soap:Header&gt;
+  &lt;soap:Body&gt;
+    &lt;GetUser xmlns="http://example.com/users"&gt;
+      &lt;userId&gt;123&lt;/userId&gt;
+    &lt;/GetUser&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</code></pre>
+
+<p class="code-caption res">レスポンス(サーバ → クライアント)</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/soap+xml; charset=utf-8
+
+&lt;?xml version="1.0"?&gt;
+&lt;soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"&gt;
+  &lt;soap:Body&gt;
+    &lt;GetUserResponse xmlns="http://example.com/users"&gt;
+      &lt;user&gt;
+        &lt;id&gt;123&lt;/id&gt;
+        &lt;name&gt;佐藤花子&lt;/name&gt;
+      &lt;/user&gt;
+    &lt;/GetUserResponse&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</code></pre>
+
+<p>
+リクエストに <code>SOAPAction</code> という専用のHTTPヘッダがある点にも注目してください。
+本来<a href="http.html#headers">HTTPヘッダ</a>で運ぶべき「何をしたいか」の情報を、SOAPは独自ヘッダとして追加しています。
+これも「HTTPの仕組みをそのまま使うのではなく、上に独自の層を重ねる」というSOAPの姿勢の表れです。
+</p>
+
+<h3>エラーは soap:Fault で</h3>
+<p>失敗時は Body の中に <code>soap:Fault</code> を入れて返します。SOAPの場合、HTTPステータスは
+成功なら <code>200</code>、サーバ側の障害なら <code>500</code> を使うのが一般的ですが、
+<strong>「ユーザが見つからない」といった意味の違いはHTTPの <code>404</code> では区別せず、Faultの中身で表現します</strong>。</p>
+
+<pre class="res"><code>  &lt;soap:Body&gt;
+    &lt;soap:Fault&gt;
+      &lt;soap:Code&gt;&lt;soap:Value&gt;soap:Sender&lt;/soap:Value&gt;&lt;/soap:Code&gt;
+      &lt;soap:Reason&gt;
+        &lt;soap:Text xml:lang="ja"&gt;ユーザが見つかりません&lt;/soap:Text&gt;
+      &lt;/soap:Reason&gt;
+    &lt;/soap:Fault&gt;
+  &lt;/soap:Body&gt;</code></pre>
+
+<h3>SOAPを取り巻く仕様のエコシステム</h3>
+<p>SOAPは単体では終わらず、企業システムの要求に応える多数の関連仕様(通称 <strong>WS-*</strong>、ダブリューエス・スター)を伴います。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>仕様</th><th>役割</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>WSDL</strong>(ウィズドル)</td>
+      <td>そのサービスが「どんな操作を・どんな引数で・どんな戻り値で」提供するかを機械可読なXMLで定義した仕様書。これを読めばクライアント側のコードを自動生成できる。</td>
+    </tr>
+    <tr>
+      <td>WS-Security</td>
+      <td>メッセージ単位の暗号化・電子署名・認証。通信路だけでなくメッセージそのものを守る。</td>
+    </tr>
+    <tr>
+      <td>WS-ReliableMessaging</td>
+      <td>「確実に1回だけ届ける」など配送の信頼性保証。</td>
+    </tr>
+    <tr>
+      <td>UDDI</td>
+      <td>SOAPサービスを登録・検索するための電話帳のような仕組み(現在はほぼ使われない)。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+<p>SOAPは建前上<strong>トランスポート(通り道)に依存しない</strong>設計で、HTTPだけでなくメール(SMTP)などでも運べることになっています。
+だからこそHTTPのステータスコードに意味を持たせず、成功/失敗を自前のFaultで表現します。
+「どの通り道でも同じように動く」ことを優先した結果、HTTP固有の便利機能をあえて使わない——これがSOAPの一貫した思想です。
+ただし現実には、SOAPメッセージの99%はHTTPで運ばれています。</p>
+</div>
+</section>
+
+<section id="tunnel">
+<h2>仕組みの共通点 — HTTPを「トンネル」にする</h2>
+
+<p>
+XML-RPCもSOAPも、やっていることの本質は同じです。<strong>HTTPのPOSTという封筒の中に、
+自分たちのメッセージ(XML)を丸ごと入れて運ぶ</strong>。HTTPはその中身を一切解釈せず、ただ運ぶだけ。
+このように、あるプロトコルを別のプロトコルの中に包んで通すことを<strong>トンネリング(tunneling)</strong>と呼びます。
+SOAP/XML-RPCは「HTTPトンネリング」でRPCを実現しているわけです。
+</p>
+
+<div class="analogy">
+<p>宅配便(HTTP)の段ボール箱に、さらに自社専用の箱(SOAP/XML-RPCメッセージ)を入れて送るイメージです。
+宅配業者(HTTP)は外側の箱だけ見て運びます。中の専用箱の開け方や中身のルールは、
+送り主と受取人だけが知っている独自の取り決め。宅配便の「速達」「着払い」といった便利機能(HTTPのメソッドやステータス)は、
+中の専用箱には関係なく使われません。</p>
+</div>
+
+<p>3つの技術がHTTPをどう使うかを並べると、違いが一目で分かります。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr>
+      <th>観点</th>
+      <th>REST(<a href="rest.html#restful">レベル2</a>)</th>
+      <th>XML-RPC</th>
+      <th>SOAP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>使うHTTPメソッド</td>
+      <td>GET/POST/PUT/DELETE を使い分け</td>
+      <td>POST のみ</td>
+      <td>POST のみ</td>
+    </tr>
+    <tr>
+      <td>URI(エンドポイント)の数</td>
+      <td>リソースごとに多数</td>
+      <td>原則1つ</td>
+      <td>原則1つ(サービス単位)</td>
+    </tr>
+    <tr>
+      <td>「何をするか」の指定場所</td>
+      <td>URI + メソッド</td>
+      <td>ボディの methodName</td>
+      <td>ボディの要素名 + SOAPAction ヘッダ</td>
+    </tr>
+    <tr>
+      <td>成功/失敗の伝え方</td>
+      <td>HTTPステータス(200/404/400…)</td>
+      <td>常に200。失敗はボディの fault</td>
+      <td>200/500 中心。詳細はボディの Fault</td>
+    </tr>
+    <tr>
+      <td>データ形式</td>
+      <td>主にJSON</td>
+      <td>XML(簡素)</td>
+      <td>XML(Envelope構造)</td>
+    </tr>
+    <tr>
+      <td>Content-Type</td>
+      <td><code>application/json</code></td>
+      <td><code>text/xml</code></td>
+      <td><code>application/soap+xml</code></td>
+    </tr>
+    <tr>
+      <td>GETのキャッシュ</td>
+      <td>効く(<a href="http.html#cache">条件付きGET</a>等)</td>
+      <td>効かない(全部POST)</td>
+      <td>効かない(全部POST)</td>
+    </tr>
+    <tr>
+      <td>仕様の重さ</td>
+      <td>軽い(ゆるやかな規約)</td>
+      <td>非常に軽い</td>
+      <td>重い(WSDL・WS-* 群)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<section id="misuse">
+<h2>「HTTP POSTの誤用」なのか? — RESTの視点から</h2>
+
+<p>
+ここまで見ると、素朴な疑問がわきます。
+<strong>「取得するだけの処理まで全部POSTにして、URIも1つしか使わないのは、HTTPの使い方として間違っているのでは?」</strong>。
+これはWebの技術を学ぶ人が必ずぶつかる良い問いです。結論を急がず、両方の言い分を見てみましょう。
+</p>
+
+<h3>「誤用だ」と言われる理由(RESTの立場)</h3>
+<p>
+<a href="rest.html">REST</a>は、HTTPを単なる通り道ではなく<strong>「アプリケーションプロトコル」——
+それ自体が意味を持つ言語</strong>として最大限に活用します。その立場から見ると、SOAP/XML-RPCは
+HTTPが用意した便利な仕組みをことごとく使い捨てにしています。
+</p>
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>もったいない点</th><th>何が失われるか</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>取得もすべてPOST(<a href="http.html#methods">安全なメソッドを使わない</a>)</td>
+      <td>「読むだけ」だと機械に伝わらず、<a href="http.html#cache">キャッシュ</a>が効かない。同じ問い合わせでも毎回サーバに届き、負荷が減らない。</td>
+    </tr>
+    <tr>
+      <td>URIが操作対象を指さない(<a href="uri.html">1つのエンドポイント</a>)</td>
+      <td>個々のデータにURIで名前が付かないので、ブックマークもリンクも共有もできない。<a href="uri.html#cool-uri">クールURI</a>やハイパーメディアの利点が消える。</td>
+    </tr>
+    <tr>
+      <td>HTTPステータスコードを使わない(全部200)</td>
+      <td>途中のプロキシ・CDN・監視ツールが「成功か失敗か」を判断できない。エラーの中身を毎回ボディまで開けないと分からない。</td>
+    </tr>
+    <tr>
+      <td>統一インターフェースに反する</td>
+      <td><a href="rest.html#uniform-interface">「限られた作法で誰とでも話せる」というWebの強み</a>が使えず、サービスごとに独自の呼び出し規約を覚える必要がある。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>「誤用ではない/合理的だった」という反論</h3>
+<ul>
+  <li><strong>仕様違反ではない。</strong> <a href="http.html#methods">POSTは元々「その他の処理」を広く許容するメソッド</a>で、「命令をボディで送る」使い方はHTTPの規約に反していません。HTTPは元来アプリ間でデータを転送する汎用プロトコルでもあります。</li>
+  <li><strong>現実的な大勝利だった。</strong> 当時、企業のファイアウォールは外向きのHTTP(ポート80/443)しか通さないのが普通でした。従来のRPC(CORBA/DCOM)は専用ポートが塞がれて社外と通信できない。「<a href="#rpc-idea">誰でも通れるHTTPに相乗りする</a>」ことで、初めて企業間・インターネット越しのRPCが実用になった——これは実務上とても大きな価値でした。</li>
+  <li><strong>思想として一貫している。</strong> SOAPは「どの通り道でも同じに動く」ことを重視したので、HTTP固有のステータスコードにあえて依存しないのは、その設計方針からすると筋が通っています。</li>
+</ul>
+
+<div class="point">
+<p>
+だから正確には、「誤用」というより<strong>HTTPというものの捉え方の違い</strong>です。<br>
+・<strong>REST</strong>は、HTTPを「意味を持つアプリケーションプロトコル」とみなし、メソッド・ステータス・URIを言葉として使い倒す。<br>
+・<strong>SOAP/XML-RPC</strong>は、HTTPを「中身を問わず運んでくれるトランスポート(トンネル)」とみなし、意味づけは自分たちの層で行う。<br>
+同じ <code>POST</code> でも、狙いがまるで違うのです。書籍『Webを支える技術』が繰り返し問いかけるのも、この
+「<strong>HTTPをどう捉えるか</strong>」というテーマにほかなりません。そして歴史は、シンプルにHTTPを活用するRESTの側に軍配を上げました(次のセクション)。</p>
+</div>
+</section>
+
+<section id="history">
+<h2>成り立ちと勢力図の変遷</h2>
+
+<p>SOAP/XML-RPCとRESTは、実はほぼ同時に生まれた「双子のライバル」でした。その勝敗が決まるまでを年表で追います。</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>時期</th><th>出来事</th><th>意味</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1998年</td>
+      <td>XML-RPC 公開</td>
+      <td>「XMLをHTTP POSTで送るだけ」の最小RPCが登場。手軽さで一部に普及。</td>
+    </tr>
+    <tr>
+      <td>1998〜2000年</td>
+      <td>SOAP 登場(Microsoft/IBM など)</td>
+      <td>XML-RPCを企業向けに拡張。大手ベンダが揃って推進し、Web APIの「本命」と目される。</td>
+    </tr>
+    <tr>
+      <td>2000年</td>
+      <td>Roy Fielding が REST を提唱</td>
+      <td>「Webの成功はシンプルな仕組みにある」と理論化(→ <a href="rest.html">REST</a>)。当時はSOAPほど注目されず。</td>
+    </tr>
+    <tr>
+      <td>2000年代前半</td>
+      <td>SOAP / WS-* の隆盛</td>
+      <td>.NET や Java EE が全面支援。エンタープライズのシステム間連携の標準として広く採用される。ただしWS-*が増え続け、複雑さが深刻化。</td>
+    </tr>
+    <tr>
+      <td>2005年ごろ</td>
+      <td>Web 2.0 とシンプルなAPIの流行</td>
+      <td>大手のWebサービスが、扱いやすい<strong>REST + JSON</strong>のAPIを公開し始める。開発者が「SOAPは重すぎる」と実感。</td>
+    </tr>
+    <tr>
+      <td>2008〜2010年ごろ</td>
+      <td>REST + JSON が公開Web APIの主流に</td>
+      <td><a href="ajax.html">Ajax</a>やスマホアプリとの相性の良さ(ブラウザからそのまま扱える)も後押し。『Webを支える技術』刊行(2010)はこの転換点。</td>
+    </tr>
+    <tr>
+      <td>2010年代〜現在</td>
+      <td>新規開発でのSOAP採用は激減</td>
+      <td>公開APIはREST、社内の高速通信は後発のgRPCへ。SOAPは既存の基幹系で維持される「レガシー」寄りの位置に。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+なぜSOAPは主役の座を譲ったのか。ひとことで言えば<strong>「複雑さに見合わなくなった」</strong>からです。
+WSDLを書き、WS-*を積み上げ、専用ツールでコード生成し……という重厚な手順は、
+厳格さが必要な企業間取引には向いていましたが、「ブラウザのJavaScriptからサッと呼びたい」
+「スマホアプリで手軽に使いたい」という<a href="ajax.html">Ajax</a>以降のニーズには重すぎました。
+そこへ、HTTPをそのまま活かしJSONで軽く返すRESTが、ちょうど良い落としどころとして広まったのです。
+</p>
+</section>
+
+<section id="today">
+<h2>現在の使われ方 — 今どこで動いているか</h2>
+
+<p>「もう使われていない古い技術」と切り捨てるのは正確ではありません。2026年現在の実像はこうです。</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">SOAP — 今も現役(特定分野)</p>
+    <p>金融・決済、通信キャリア、行政・公共、企業間(B2B)の基幹システムで根強く稼働。厳密なセキュリティ(WS-Security)や、
+    WSDLによる「契約」を重視する世界で選ばれ続けている。既存資産が巨大なため、置き換えより維持が現実的。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">XML-RPC — ほぼ歴史的</p>
+    <p>新規採用はまれ。ブログソフトのWordPressに残る <code>xmlrpc.php</code> などに名残がある程度。
+    仕組みがシンプルゆえに攻撃の入り口にもなりやすく、セキュリティ上あえて無効化されることも多い。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">RPCの発想 — 形を変えて継承</p>
+    <p>「遠くの関数を呼ぶ」という発想自体は健在。現代版は<strong>gRPC</strong>(HTTP/2上のバイナリRPC。社内マイクロサービス間の高速通信)や
+    <strong>JSON-RPC</strong>(XML-RPCのJSON版)。SOAP/XML-RPCの子孫と言える。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">公開Web API — REST + JSON が共通語</p>
+    <p>不特定多数に開くAPIは、依然としてRESTスタイル + JSONが事実上の標準(→ <a href="api-design.html">API設計のページ</a>)。
+    HTTPをそのまま活かせる手軽さが、今も選ばれる最大の理由。</p>
+  </div>
+</div>
+
+<div class="warn">
+<p><strong>XML-RPCとセキュリティ。</strong> XML-RPCのエンドポイントは「1つのURIに何でもPOSTできる」性質上、
+総当たり攻撃や大量リクエストの標的になりやすいことが知られています。
+使っていないのに有効化されたままだと危険なので、不要なら無効化するのが定石です。
+「シンプルさ」は利点であると同時に、攻撃者にとってのシンプルさでもある、という教訓です。</p>
+</div>
+
+<div class="modern">
+<p><strong>2026年の実務での選び方(目安)。</strong>
+新しくAPIを作るなら——外部公開・ブラウザやアプリから使う → <strong>REST + JSON</strong>。
+社内のサービス間で高速・大量にやりとりする → <strong>gRPC</strong>。
+金融・行政など既存のSOAP資産と連携する必要がある → <strong>SOAP</strong>を維持。
+<strong>新規でXML-RPCやSOAPをゼロから選ぶ理由は、特殊な事情がない限りほぼありません。</strong>
+とはいえ、既存システムの改修や他社との連携でSOAPに出会う可能性は今も十分あります。
+「なぜこう作られているのか」を本ページの視点で読み解ければ、恐れることはありません。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="rest.html"><span class="nav-dir">前のページ</span>REST — Webの設計思想</a>
+  <a class="next" href="ajax.html"><span class="nav-dir">次のページ</span>Ajax — JavaScriptがHTTPを使う仕組み</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

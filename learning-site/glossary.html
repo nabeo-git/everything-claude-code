@@ -18,6 +18,7 @@
       <a href="http.html">HTTP</a>
       <a href="html.html">HTML</a>
       <a href="rest.html">REST</a>
+      <a href="rpc.html">RPC/SOAP</a>
       <a href="ajax.html">Ajax</a>
       <a href="api-design.html">API設計</a>
       <a href="glossary.html" aria-current="page">用語集</a>
@@ -41,7 +42,7 @@
 <p class="lead">
 本サイトに登場する用語をまとめた索引です。
 単に意味を並べるのではなく、<strong>「その用語は技術体系のどの層の話か」</strong>を併記するのがこの用語集の方針です。
-そのため五十音順ではなく、全体像ページの地図と同じ<strong>カテゴリ(基盤/識別/転送/表現/設計思想/ブラウザ)ごと</strong>に分けています。
+そのため五十音順ではなく、全体像ページの地図と同じ<strong>カテゴリ(基盤/識別/転送/表現/設計思想/RPC/ブラウザ)ごと</strong>に分けています。
 定義は1〜3文の最小限にとどめ、詳しい解説は各ページへのリンクで案内します。
 </p>
 
@@ -53,6 +54,7 @@
     <li><a href="#transfer">転送(HTTP)</a></li>
     <li><a href="#format">表現(フォーマット)</a></li>
     <li><a href="#design">設計思想(REST/API)</a></li>
+    <li><a href="#rpc-soap">手続き呼び出し(RPC/SOAP)</a></li>
     <li><a href="#dynamic-web">ブラウザ・動的なWeb</a></li>
   </ol>
 </div>
@@ -278,7 +280,33 @@
   <dd>クライアントがクエリ(問い合わせ文)を書き、必要なデータだけをまとめて取得できるAPIスタイル。RESTとは別のアプローチだが、HTTPの上で動く点は同じ。→ <a href="rest.html">REST</a></dd>
 
   <dt>gRPC</dt>
-  <dd>関数呼び出しのように相手サーバの処理を呼ぶ、高速なバイナリ通信の仕組み。データセンター内部のサービス間通信で使われることが多い。→ <a href="rest.html">REST</a></dd>
+  <dd>関数呼び出しのように相手サーバの処理を呼ぶ、高速なバイナリ通信の仕組み。データセンター内部のサービス間通信で使われることが多い。→ <a href="rest.html">REST</a> / <a href="rpc.html">RPC/SOAP</a></dd>
+</dl>
+</section>
+
+<section id="rpc-soap">
+<h2>手続き呼び出し(RPC/SOAP)</h2>
+<dl class="term-list">
+  <dt>RPC(Remote Procedure Call、遠隔手続き呼び出し)</dt>
+  <dd>手元の関数呼び出し <code>getUser(123)</code> のように、遠くのサーバの処理を呼び出す発想。RESTが「名詞(リソース)」中心なのに対し、RPCは「動詞(手続き)」中心。→ <a href="rpc.html">RPC/SOAP</a></dd>
+
+  <dt>XML-RPC</dt>
+  <dd>1998年登場の最小のHTTP-RPC。命令名と引数をXMLで書き、1つのURIへHTTP POSTで送る。失敗してもHTTPは200のままで、詳細はボディの fault で伝える。→ <a href="rpc.html#xml-rpc">RPC/SOAP</a></dd>
+
+  <dt>SOAP</dt>
+  <dd>1998〜2000年に登場したXMLメッセージング仕様。メッセージを Envelope(封筒)で包み、Header(メタデータ)と Body(本文)に分ける。企業システム向けの重装備。当初は略語だったがSOAP 1.2以降は固有名詞。→ <a href="rpc.html#soap">RPC/SOAP</a></dd>
+
+  <dt>SOAP Envelope / Fault</dt>
+  <dd>Envelopeはメッセージ全体を包む一番外側の要素。Faultは失敗時にBody内へ入れる障害情報で、SOAPはHTTPの404等を使わずFaultの中身で意味を伝える。→ <a href="rpc.html#soap">RPC/SOAP</a></dd>
+
+  <dt>WSDL(Web Services Description Language)</dt>
+  <dd>SOAPサービスが「どんな操作を・どんな引数で・どんな戻り値で」提供するかを機械可読なXMLで定義した仕様書。クライアントのコードを自動生成できる。→ <a href="rpc.html#soap">RPC/SOAP</a></dd>
+
+  <dt>トンネリング(tunneling)</dt>
+  <dd>あるプロトコルを別のプロトコルの中に包んで通すこと。SOAP/XML-RPCはHTTP POSTの中にXMLメッセージを入れて運ぶ「HTTPトンネリング」を行う。HTTPは中身を解釈せず運ぶだけになる。→ <a href="rpc.html#tunnel">RPC/SOAP</a></dd>
+
+  <dt>JSON-RPC</dt>
+  <dd>XML-RPCの発想をJSONで行う軽量なRPC仕様。XMLの代わりにJSONで命令名と引数を送る。RPCの発想の現代的な後継の一つ。→ <a href="rpc.html#today">RPC/SOAP</a></dd>
 </dl>
 </section>
 
