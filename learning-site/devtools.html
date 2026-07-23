@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブラウザ開発者ツール(DevTools) | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="Chromium / Edge DevTools の各パネル(Elements・Console・Network・Performance・Application・Security・Lighthouse)が、ネットワークのどの層の何を見る道具なのか、目的と分かることを添えて初級者向けに解説します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="rpc.html">RPC/SOAP</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="network-path.html">経路とエラー</a>
+      <a href="devtools.html" aria-current="page">DevTools</a>
+      <a href="cli-tools.html">CLI診断</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item hl">転送 = HTTP</span>
+  <span class="mm-item hl">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>ブラウザ開発者ツール(DevTools) — HTMLとHTTPを「目で見る」</h1>
+
+<div class="note">
+<p><strong>このページは診断ツール編(実作業編)です。</strong>
+HTML・CSS・JavaScript・HTTP通信を、ブラウザに標準で入っている
+<strong>開発者ツール(DevTools)</strong>でどう観察するかを、
+「<strong>どのパネルが・ネットワークのどの層の・何を見る道具なのか</strong>」という視点で整理します。
+コマンドライン版の診断は <a href="cli-tools.html">CLI診断ツールのページ</a>にあります。</p>
+</div>
+
+<p class="lead">
+Webページの表示がおかしい、通信が失敗する、動作が遅い——そんなとき、
+まず開くべき道具が<strong>ブラウザの開発者ツール(DevTools)</strong>です。
+<a href="http.html">HTTP</a>のやりとりや <a href="html.html">HTML</a>の構造、JavaScriptの動きを、
+<strong>サーバに何も手を入れず、自分のブラウザの中だけで観察</strong>できます。
+このページでは Chromium 系ブラウザ(Microsoft Edge / Google Chrome)の DevTools を題材に、
+パネルごとに<strong>「何を目的に開き、何が分かるのか」</strong>を説明します。
+</p>
+
+<section id="intro">
+<h2>DevToolsとは — 開き方と全体像</h2>
+
+<p>
+DevTools はブラウザに内蔵された、Web開発・調査のための道具箱です。次のいずれかで開きます。
+</p>
+
+<ul>
+  <li><strong>F12</strong> キー、または <strong>Ctrl+Shift+I</strong>(Mac は <strong>Cmd+Option+I</strong>)</li>
+  <li>ページを右クリック →「<strong>検証</strong>(Inspect)」</li>
+</ul>
+
+<div class="point">
+<p><strong>Edge も Chrome も、中身は同じ「Chromium」です。</strong>
+Microsoft Edge と Google Chrome は同じ Chromium エンジンで動いているため、
+DevTools の見た目・操作・機能はほぼ共通です。この解説はどちらでも通用します
+(Firefox や Safari にも同等の開発者ツールがありますが、実装は別系統です)。</p>
+</div>
+
+<p>
+DevTools は複数の<strong>パネル(タブ)</strong>に分かれていて、それぞれ見る対象の「層」が違います。
+まず全体像を、下の一覧でつかんでください。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr>
+      <th>パネル</th>
+      <th>主な対象</th>
+      <th>何を見る道具か</th>
+      <th>こんなときに開く(目的)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><a href="#elements">Elements(要素)</a></td><td>表現層(DOM / CSS)</td><td>描画後のHTML構造と適用CSS</td><td>表示が崩れる・意図した見た目にならない</td></tr>
+    <tr><td><a href="#console">Console(コンソール)</a></td><td>JavaScript</td><td>スクリプトのエラー・ログ・実行</td><td>ページが動かない・JSエラーを読みたい</td></tr>
+    <tr><td><a href="#network">Network(ネットワーク)</a></td><td>転送層(HTTP)</td><td>全リクエスト/レスポンス・状態・時間</td><td>通信が失敗する・遅い・APIの中身を見たい</td></tr>
+    <tr><td><a href="#performance">Performance</a></td><td>読み込み・描画</td><td>処理のタイムライン</td><td>ページが重い・原因を特定したい</td></tr>
+    <tr><td><a href="#application">Application</a></td><td>状態・保存(Cookie等)</td><td>Cookie・ストレージ・キャッシュ</td><td>ログイン状態・保存データを確認したい</td></tr>
+    <tr><td><a href="#security">Security</a></td><td>暗号化(TLS/証明書)</td><td>HTTPSの証明書・混在コンテンツ</td><td>「保護されていない通信」の原因を見たい</td></tr>
+    <tr><td><a href="#lighthouse">Lighthouse</a></td><td>総合品質</td><td>性能・アクセシビリティ・SEOの監査</td><td>ページ全体を採点し改善点が欲しい</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="modern">
+<p><strong>公式ドキュメント。</strong>
+各パネルの詳細な使い方は、Microsoft の公式解説が充実しています(日本語)。
+→ <a href="https://learn.microsoft.com/ja-jp/microsoft-edge/devtools/landing/">Microsoft Edge DevTools ドキュメント</a></p>
+</div>
+</section>
+
+<section id="elements">
+<h2>Elements(要素)— 表現層:DOMとCSSを見る</h2>
+
+<p>
+<strong>対象レイヤ:</strong> <a href="html.html">表現層(HTML/CSS)</a>。
+<strong>何を見る:</strong> ブラウザが実際に組み立てた<strong>DOM(描画後のHTML構造)</strong>と、
+各要素に<strong>実際に効いているCSS</strong>、余白やサイズ(ボックスモデル)。
+</p>
+<p>
+ここで見えるのは「サーバから届いた生のHTML」ではなく、JavaScriptによる変更も反映した<strong>今この瞬間の構造</strong>です。
+要素にマウスを重ねると画面上の位置がハイライトされ、右側の Styles で「どのCSSが・どの順で適用され・どれが打ち消されたか」まで追えます。
+</p>
+<p>
+<strong>目的:</strong> 「文字がはみ出す」「ボタンがずれる」といった<strong>見た目の崩れを、構造とスタイルの側から特定</strong>すること。
+<strong>分かること・次の一手:</strong> 崩れの原因が「HTMLの入れ子」なのか「効きすぎ/効いていないCSS」なのかが切り分けられ、
+その場で値を書き換えて直し方を試せます(変更はリロードで消える一時的なもの)。
+</p>
+</section>
+
+<section id="console">
+<h2>Console(コンソール)— JavaScriptのエラーとログ</h2>
+
+<p>
+<strong>対象レイヤ:</strong> ブラウザ上で動く JavaScript。
+<strong>何を見る:</strong> スクリプトの<strong>エラーメッセージ・警告・<code>console.log</code> の出力</strong>。その場で JavaScript を打ち込んで実行もできます。
+</p>
+<p>
+<strong>目的:</strong> 「ページが途中で止まる」「ボタンが反応しない」ときに、<strong>裏で出ているエラーの正体を読む</strong>こと。
+とくに <a href="ajax.html">Ajax(fetch)</a>の失敗は、ここに赤いエラー(CORS違反、404、ネットワークエラー等)として現れます。
+<strong>分かること・次の一手:</strong> エラーの種類とファイル/行番号が分かるので、原因が「自分のJSのバグ」なのか
+「サーバ側の応答(→ <a href="#network">Network</a>で確認)」なのかに進めます。
+</p>
+</section>
+
+<section id="network">
+<h2>Network(ネットワーク)— 転送層:HTTPのやりとりを丸ごと見る</h2>
+
+<p>
+<strong>対象レイヤ:</strong> <a href="http.html">転送層(HTTP)</a>。
+<strong>何を見る:</strong> ページを開いてから発生した<strong>すべてのHTTPリクエスト/レスポンス</strong>を一覧で。
+1件を選べば、メソッド・URL・<a href="http.html#status">ステータスコード</a>・<a href="http.html#headers">ヘッダ</a>・送受信ボディ・かかった時間まで、
+<a href="http.html">HTTPのページ</a>で学んだ「生のメッセージ」がそのまま見られます。
+</p>
+
+<p>
+<strong>これは <a href="network-path.html">経路とエラーのページ</a>や <a href="cli-tools.html">CLIツール</a>の <code>curl -v</code> を、GUIで見ているのと同じ</strong>です。
+一覧の各列の意味を押さえておくと、ひと目で当たりがつけられます。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>列</th><th>意味</th><th>ここを見て分かること</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Name</td><td>リクエスト先のファイル/URL</td><td>どのリソースの通信かを識別する</td></tr>
+    <tr><td>Status</td><td><a href="http.html#status">HTTPステータスコード</a></td><td>200成功か、404/403/500系の失敗か。赤色は失敗</td></tr>
+    <tr><td>Type</td><td>リソースの種類(document / script / fetch / img など)</td><td>HTMLかAPI呼び出しか画像か</td></tr>
+    <tr><td>Initiator</td><td>その通信を発生させた張本人</td><td>どのスクリプト/要素がこのリクエストを出したか</td></tr>
+    <tr><td>Size</td><td>転送サイズ</td><td>重いリソース、キャッシュから来たか(「(memory cache)」等)</td></tr>
+    <tr><td>Time</td><td>完了までの時間</td><td>どのリクエストが遅いか</td></tr>
+    <tr><td>Waterfall</td><td>時間軸上の内訳(待機/DNS/接続/TLS/ダウンロード)</td><td>遅さが「待たされている」のか「転送中」なのか</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+知っておくと便利な設定が3つあります。
+</p>
+<ul>
+  <li><strong>Disable cache</strong>: キャッシュを無効化して、毎回サーバから取り直す。古い状態に惑わされない。</li>
+  <li><strong>Preserve log</strong>: ページ遷移やリダイレクトをまたいでも記録を消さない。ログイン後の飛び先などを追える。</li>
+  <li><strong>スロットリング(Throttling)</strong>: 回線速度を「低速3G」などに擬似的に落とし、遅い環境での見え方を再現する。</li>
+</ul>
+
+<p>
+<strong>目的:</strong> 「どのリクエストが失敗しているか/遅いか」を特定すること。
+<strong>分かること・次の一手:</strong> 失敗しているリクエストの<strong>ステータスコードとヘッダ</strong>が読めるので、
+<a href="network-path.html">4xx(依頼側/ポリシー)か 5xx(サーバ側/経路)か</a>の切り分けに直結します。
+リクエスト自体が発生していないなら原因は <a href="#console">JS側</a>、というふうに調査範囲が絞れます。
+</p>
+
+<div class="warn">
+<p><strong>キャッシュの罠に注意。</strong>
+「直したはずなのに変わらない」の多くは、古いファイルがキャッシュから使われているせいです。
+調査中は <strong>Disable cache</strong> をオンにしておくと、無用な混乱を避けられます。</p>
+</div>
+</section>
+
+<section id="performance">
+<h2>Performance — 読み込みと描画の時間を分解する</h2>
+
+<p>
+<strong>対象レイヤ:</strong> ブラウザ内部の処理(読み込み・スクリプト実行・描画)。
+<strong>何を見る:</strong> 記録ボタンを押してからの一連の処理を<strong>時間軸のタイムライン</strong>に分解したもの。
+どこで時間を使ったか(スクリプト/レイアウト計算/描画)が色分けで見えます。
+</p>
+<p>
+<strong>目的:</strong> 「ページが重い・カクつく」の原因を、感覚ではなく<strong>数字で特定</strong>すること。
+<strong>分かること・次の一手:</strong> ボトルネックが「重いJavaScript」なのか「大きな画像の読み込み」なのか「頻繁な再描画」なのかが分かり、
+手を入れる場所が決まります。まず全体を採点したいだけなら <a href="#lighthouse">Lighthouse</a> が手軽です。
+</p>
+</section>
+
+<section id="application">
+<h2>Application(アプリケーション)— 状態と保存データを見る</h2>
+
+<p>
+<strong>対象レイヤ:</strong> ブラウザが保持する<strong>状態・保存領域</strong>。
+<strong>何を見る:</strong> <a href="http.html">Cookie</a>・LocalStorage・SessionStorage・Cache Storage・Service Worker など、
+ブラウザに保存されているデータの中身。
+</p>
+<p>
+HTTP は<a href="http.html#stateless">ステートレス</a>(サーバは前回を覚えない)なので、
+ログイン状態などは Cookie 等に載せた識別子で表現されます。ここではその<strong>実物</strong>を確認・削除できます。
+</p>
+<p>
+<strong>目的:</strong> 「ログインが維持されない」「古いデータが表示される」といった、<strong>状態にまつわる不具合</strong>を調べること。
+<strong>分かること・次の一手:</strong> Cookie が正しくセットされているか、キャッシュに古い版が残っていないかが分かり、
+「消してみたら直る/直らない」で原因の当たりがつけられます。
+</p>
+</section>
+
+<section id="security">
+<h2>Security(セキュリティ)— 暗号化(TLS)と証明書を見る</h2>
+
+<p>
+<strong>対象レイヤ:</strong> <a href="http.html#https">暗号化(TLS)</a>。
+<strong>何を見る:</strong> この接続が<strong>HTTPSで正しく保護されているか</strong>、使われている証明書は誰が発行した何者か、
+そして<strong>混在コンテンツ</strong>(HTTPSページ内でHTTPのリソースを読んでいないか)。
+</p>
+<p>
+<strong>目的:</strong> アドレスバーに「保護されていない通信」と出る、鍵マークが崩れる、といった<strong>HTTPSの警告の原因を特定</strong>すること。
+<strong>分かること・次の一手:</strong> 「証明書の期限切れ/名前不一致」なのか「一部リソースがHTTPのまま」なのかが分かります。
+証明書そのものをコマンドで詳しく見たいときは、<a href="cli-tools.html#tls">CLIツールの <code>openssl s_client</code></a> に進みます。
+</p>
+</section>
+
+<section id="lighthouse">
+<h2>Lighthouse — ページ全体を自動で採点する</h2>
+
+<p>
+<strong>対象レイヤ:</strong> ページ全体の総合品質。
+<strong>何を見る:</strong> ボタン一つで、<strong>パフォーマンス・アクセシビリティ・SEO・推奨事項</strong>を自動診断し、点数と改善提案を出す監査ツール。
+</p>
+<p>
+<strong>目的:</strong> どこから手を付けるべきか分からないときに、<strong>優先順位つきの改善リスト</strong>を得ること。
+<strong>分かること・次の一手:</strong> 「画像が最適化されていない」「文字色のコントラストが低い」など具体的な指摘が出るので、
+詳しく掘るときに <a href="#performance">Performance</a> や <a href="#elements">Elements</a> へ進めます。
+</p>
+
+<div class="note">
+<p><strong>デバイスエミュレーションと回線再現。</strong>
+DevTools 左上の端末アイコンで<strong>スマホ表示</strong>に切り替えたり、
+User-Agent や画面サイズ、回線速度を擬似的に変えられます。
+「PCでは正常だがスマホで崩れる」「遅い回線での見え方」を、実機がなくても再現して確認できます。</p>
+</div>
+</section>
+
+<section id="map">
+<h2>まとめ — パネルとサイトの地図の対応</h2>
+
+<p>
+DevTools のパネルは、本サイトが繰り返し使ってきた<strong>層の地図</strong>にそのまま重なります。
+「今どの層を調べているのか」を意識すれば、どのパネルを開くべきか迷いません。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">表現(何を)= HTML/CSS/JS</p>
+    <p><a href="#elements">Elements</a> / <a href="#console">Console</a> / <a href="#performance">Performance</a> で構造・スクリプト・描画を見る。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">転送(どう運ぶ)= HTTP</p>
+    <p><a href="#network">Network</a> でリクエスト/レスポンス・ステータス・時間を見る。→ <a href="http.html">HTTP</a></p>
+  </div>
+  <div class="card">
+    <p class="card-title">状態・暗号化</p>
+    <p><a href="#application">Application</a>(Cookie/保存)と <a href="#security">Security</a>(TLS/証明書)。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">コマンドラインで同じことを</p>
+    <p>ブラウザなしで同じ層を調べるなら → <a href="cli-tools.html">CLI診断ツール(Windows/Linux)</a></p>
+  </div>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="http.html"><span class="nav-dir">前のページ</span>HTTP — Webの配送プロトコル</a>
+  <a class="next" href="cli-tools.html"><span class="nav-dir">次のページ</span>CLI診断ツール — Windows と Linux</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

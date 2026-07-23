@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLI診断ツール(Windows / Linux) | 「Webを支える技術」学習サイト</title>
+<meta name="description" content="Windows(PowerShellのTest-NetConnection等)とLinux(ping/dig/curl/openssl等)に標準で入っているネットワーク診断コマンドを、ネットワークのどの層の何を確認する道具なのか、目的と分かることを添えてレイヤ別に整理します。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="site-title" href="index.html">Webを支える技術 <span>学習サイト</span></a>
+    <nav class="site-nav">
+      <a href="index.html">全体像</a>
+      <a href="web.html">Webとは</a>
+      <a href="uri.html">URI</a>
+      <a href="http.html">HTTP</a>
+      <a href="html.html">HTML</a>
+      <a href="rest.html">REST</a>
+      <a href="rpc.html">RPC/SOAP</a>
+      <a href="ajax.html">Ajax</a>
+      <a href="api-design.html">API設計</a>
+      <a href="network-path.html">経路とエラー</a>
+      <a href="devtools.html">DevTools</a>
+      <a href="cli-tools.html" aria-current="page">CLI診断</a>
+      <a href="glossary.html">用語集</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="mini-map">
+  <span class="mm-label">全体像の中での位置づけ:</span>
+  <span class="mm-item">Webという仕組み全体</span>
+  <span class="mm-item">識別 = URI</span>
+  <span class="mm-item hl">転送 = HTTP</span>
+  <span class="mm-item">表現 = HTML/JSON</span>
+  <span class="mm-item">設計思想 = REST</span>
+</div>
+
+<h1>CLI診断ツール — Windows と Linux で「どの層の何を」確認する</h1>
+
+<div class="note">
+<p><strong>このページは診断ツール編(実作業編)です。</strong>
+OSに<strong>最初から入っている</strong>コマンドで、ネットワークとHTTPを切り分ける方法を、
+Windows(PowerShell + 従来コマンド)と Linux の両方で、<strong>レイヤ別</strong>に整理します。
+各ツールについて「<strong>どの層の・何を・なぜ確認するのか</strong>」を必ず添えます。
+ブラウザで見る場合は <a href="devtools.html">DevToolsのページ</a>、
+切り分けの順番の考え方は <a href="network-path.html">経路とエラーのページ</a>を参照してください。</p>
+</div>
+
+<p class="lead">
+「サイトにつながらない」「遅い」「APIが変な応答を返す」——原因を突き止めるには、
+<strong>下の層(本当に届いているか)から順に、一枚ずつ確かめて上の層(HTTP)へ登っていく</strong>のが鉄則です。
+どのコマンドも「ネットワークのどの層を照らす懐中電灯なのか」を意識すれば、闇雲に叩かずに済みます。
+まずは全体地図から見ていきましょう。
+</p>
+
+<section id="map">
+<h2>切り分けのためのレイヤ地図</h2>
+
+<p>
+ネットワークは<strong>層(レイヤ)</strong>で積み上がっています。下ほど基礎で、上ほどアプリケーションに近い話です。
+トラブルの切り分けは、<strong>下の層から「ここは正常」と確認して上へ登る</strong>のが基本です
+(下が壊れていれば、上は必ず失敗するからです)。
+</p>
+
+<div class="stack">
+  <div class="layer hl">
+    <span class="layer-role">アプリケーション(L7)</span>
+    <span class="layer-tech">HTTP / TLS</span>
+    <span class="layer-desc">実際のHTTPのやりとりと暗号化。<code>curl</code> / <code>Invoke-WebRequest</code> / <code>openssl s_client</code>。→ <a href="#http">HTTP節</a> / <a href="#tls">TLS節</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">名前解決</span>
+    <span class="layer-tech">DNS</span>
+    <span class="layer-desc">ドメイン名 → IPアドレスの変換。技術的にはアプリ層のサービスだが、切り分けでは独立した確認項目。<code>dig</code> / <code>nslookup</code> / <code>Resolve-DnsName</code>。→ <a href="#dns">DNS節</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">トランスポート(L4)</span>
+    <span class="layer-tech">TCP / UDP + ポート番号</span>
+    <span class="layer-desc">相手の特定のポートに通信路を張れるか。<code>Test-NetConnection -Port</code> / <code>nc -vz</code> / <code>ss</code>。→ <a href="#port">ポート節</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">インターネット(L3)</span>
+    <span class="layer-tech">IP / ICMP</span>
+    <span class="layer-desc">相手のホストまでパケットが届くか、どの経路を通るか。<code>ping</code> / <code>traceroute</code>。→ <a href="#reachability">到達性節</a></span>
+  </div>
+  <div class="layer">
+    <span class="layer-role">リンク(L2/L1)</span>
+    <span class="layer-tech">イーサネット / Wi-Fi</span>
+    <span class="layer-desc">自分のIP設定・経路・隣接機器。<code>ipconfig</code> / <code>ip addr</code> / <code>arp</code>。</span>
+  </div>
+</div>
+
+<h3>Windows ↔ Linux 対応表(早見表)</h3>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>目的(何を確かめたい)</th><th>層</th><th>Windows</th><th>Linux</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>ホストまで届くか</td><td>L3</td><td><code>ping</code> / <code>Test-Connection</code></td><td><code>ping</code></td></tr>
+    <tr><td>どの経路で・どこで止まるか</td><td>L3</td><td><code>tracert</code> / <code>pathping</code> / <code>Test-NetConnection -TraceRoute</code></td><td><code>traceroute</code> / <code>tracepath</code> / <code>mtr</code></td></tr>
+    <tr><td>自分のIP・経路設定</td><td>L2/L3</td><td><code>ipconfig /all</code> / <code>Get-NetIPConfiguration</code></td><td><code>ip addr</code> / <code>ip route</code></td></tr>
+    <tr><td>名前解決(ドメイン→IP)</td><td>DNS</td><td><code>nslookup</code> / <code>Resolve-DnsName</code></td><td><code>dig</code> / <code>host</code> / <code>getent hosts</code></td></tr>
+    <tr><td>特定ポートが開いているか</td><td>L4</td><td><code>Test-NetConnection -Port</code></td><td><code>nc -vz</code> / <code>telnet</code></td></tr>
+    <tr><td>今つながっている接続の一覧</td><td>L4</td><td><code>Get-NetTCPConnection</code> / <code>netstat -ano</code></td><td><code>ss -tulpn</code> / <code>netstat -tulpn</code></td></tr>
+    <tr><td>TLS/証明書の確認</td><td>TLS</td><td><code>curl.exe -v</code> / <a href="devtools.html#security">DevTools Security</a></td><td><code>openssl s_client</code></td></tr>
+    <tr><td>HTTPの応答を取得</td><td>L7</td><td><code>Invoke-WebRequest</code> / <code>Invoke-RestMethod</code> / <code>curl.exe</code></td><td><code>curl</code> / <code>wget</code></td></tr>
+    <tr><td>パケットを生で捕捉</td><td>全層</td><td><code>pktmon</code> / Wireshark</td><td><code>tcpdump</code> / Wireshark</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>タスク別クイックインデックス</h3>
+<ul>
+  <li>そもそも<strong>つながらない</strong> → まず <a href="#reachability">IP到達性(ping)</a></li>
+  <li><strong>名前解決</strong>を疑う(IPなら通るのに名前だと駄目) → <a href="#dns">DNS</a></li>
+  <li>ホストには届くが<strong>ポートが開いているか</strong>不明 → <a href="#port">ポート到達性</a></li>
+  <li><strong>HTTPS/証明書</strong>の警告 → <a href="#tls">TLS/証明書</a></li>
+  <li><strong>HTTPの中身(ステータス・ヘッダ・ボディ)</strong>を見たい → <a href="#http">HTTP取得</a></li>
+  <li>上のツールで<strong>切り分かない</strong> → <a href="#capture">パケットキャプチャ</a></li>
+</ul>
+</section>
+
+<section id="reachability">
+<h2>1. IP到達性(L3 / ICMP)— そもそも届くか、どこで止まるか</h2>
+
+<p>
+<strong>対象レイヤ:</strong> インターネット層(L3、IP/ICMP)。
+<strong>何を見る:</strong> 相手ホストまで<strong>パケットが往復できるか</strong>(ping)、
+<strong>途中のどの中継点(ホップ)まで進めるか</strong>(traceroute系)。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">Windows(PowerShell / コマンド)</p>
+<pre><code># 届くか(ICMP ping)
+ping example.com
+Test-Connection -TargetName example.com -Count 4
+
+# 経路をたどる
+tracert example.com
+Test-NetConnection example.com -TraceRoute
+
+# 経路 + 各ホップの遅延・損失(時間はかかる)
+pathping example.com
+
+# 自分のIP・ゲートウェイ・DNS設定
+ipconfig /all
+Get-NetIPConfiguration</code></pre>
+</div>
+<div>
+<p class="code-caption">Linux</p>
+<pre><code># 届くか(ICMP ping)。Ctrl+C で停止
+ping example.com
+
+# 経路をたどる
+traceroute example.com
+tracepath example.com
+
+# 経路 + 損失を継続表示(見やすい)
+mtr example.com
+
+# 自分のIP・経路
+ip addr
+ip route</code></pre>
+</div>
+</div>
+
+<p>
+<strong>目的:</strong> HTTP以前に、<strong>ネットワークとして相手に届いているのか</strong>を確かめること。
+<strong>分かること・次の一手:</strong> ping が返れば L3 は生きている——問題はより上の層(ポートやHTTP)にある。
+返らない/途中のホップで止まるなら、その先の<strong>経路やファイアウォールの遮断</strong>を疑う
+(→ <a href="network-path.html#behavior">経路とエラー:DROP は無反応=タイムアウト</a>)。
+</p>
+
+<div class="note">
+<p><strong>ping が返らない=障害、とは限りません。</strong>
+セキュリティ上、ICMP(ping)だけをわざと遮断しているサーバやFWは珍しくありません。
+「ping は駄目だが Web は見える」ことは普通に起こります。ping はあくまで<strong>最初の目安</strong>で、
+最終判断は上の層(ポート/HTTP)の確認と合わせて行います。</p>
+</div>
+</section>
+
+<section id="dns">
+<h2>2. 名前解決(DNS)— ドメイン名は正しいIPに変換されているか</h2>
+
+<p>
+<strong>対象レイヤ:</strong> DNS(名前解決。技術的にはアプリ層のサービス)。
+<strong>何を見る:</strong> <code>example.com</code> のような<strong>ドメイン名が、どのIPアドレスに変換されるか</strong>。
+どのDNSサーバに聞いているか、キャッシュに古い値が残っていないか。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">Windows(PowerShell / コマンド)</p>
+<pre><code># 名前 → IP を引く
+nslookup example.com
+Resolve-DnsName example.com
+
+# 使っているDNSサーバの確認
+Get-DnsClientServerAddress
+
+# DNSキャッシュの表示 / 消去
+ipconfig /displaydns
+ipconfig /flushdns</code></pre>
+</div>
+<div>
+<p class="code-caption">Linux</p>
+<pre><code># 名前 → IP を引く
+dig example.com
+dig +short example.com
+host example.com
+
+# OSの名前解決順序(hosts等)も含めて引く
+getent hosts example.com
+
+# systemd-resolved 環境
+resolvectl query example.com</code></pre>
+</div>
+</div>
+
+<p>
+<strong>目的:</strong> 「IP直打ちなら通るのに、ドメイン名だと駄目」というときに、<strong>変換そのものを疑う</strong>こと。
+<strong>分かること・次の一手:</strong> 返ってくるIPが<strong>期待通りか/そもそも引けているか</strong>が分かります。
+引けない・古いIPが返るなら、DNS設定やキャッシュ(<code>flushdns</code>)の問題。
+正しいIPが引けているのに繋がらないなら、原因は<a href="#port">ポート</a>や<a href="#http">HTTP</a>側にある、と切り分けられます。
+</p>
+</section>
+
+<section id="port">
+<h2>3. ポート到達性(L4 / TCP)— 相手の窓口に通信路を張れるか</h2>
+
+<p>
+<strong>対象レイヤ:</strong> トランスポート層(L4、TCP/UDP + ポート番号)。
+<strong>何を見る:</strong> 相手の<strong>特定のポート(例:HTTPSの443)にTCP接続が張れるか</strong>。
+ping(L3)が通っても、<strong>ポートがFWで塞がれていれば通信は成立しません</strong>。ここはその一段上の確認です。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">Windows(PowerShell / コマンド)</p>
+<pre><code># 主役: 443番へTCP接続できるか
+Test-NetConnection example.com -Port 443
+# → TcpTestSucceeded : True なら開通
+
+# 詳細表示(経路・IP・応答も)
+Test-NetConnection example.com -Port 443 `
+  -InformationLevel Detailed
+
+# よく使うポートは名前指定も可
+Test-NetConnection example.com -CommonTCPPort HTTP
+
+# 今つながっている接続の一覧
+Get-NetTCPConnection -State Established
+netstat -ano</code></pre>
+</div>
+<div>
+<p class="code-caption">Linux</p>
+<pre><code># 443番へTCP接続できるか(-z:送らず確認, -v:詳細)
+nc -vz example.com 443
+
+# telnet でも可(つながれば画面が変わる)
+telnet example.com 443
+
+# bash 組み込み(nc が無い環境で)
+echo &gt; /dev/tcp/example.com/443 &amp;&amp; echo OPEN
+
+# 待ち受け/接続中のポート一覧
+ss -tulpn
+netstat -tulpn</code></pre>
+</div>
+</div>
+
+<p>
+<strong>目的:</strong> 「ホストには届く(ping OK)のに、そのサービスにつながらない」ときに、<strong>ポートの開通</strong>を確かめること。
+<strong>分かること・次の一手:</strong> TCPが張れれば、経路とポートは正常——問題は<a href="#tls">TLS</a>か<a href="#http">HTTP</a>など、より上の層。
+張れない(タイムアウト/拒否)なら、<strong>FWでそのポートが遮断</strong>されている可能性が高い
+(→ <a href="network-path.html#behavior">経路とエラー:REJECT は即拒否、DROP はタイムアウト</a>)。
+</p>
+
+<div class="warn">
+<p><strong>ポートスキャン(nmap 等)は相手を選ぶこと。</strong>
+<code>nmap</code> のように多数のポートを一括で調べるツールは強力ですが、
+<strong>自分が管理する/許可を得た対象にのみ</strong>使ってください。無関係なサーバへのスキャンは、
+攻撃の偵察とみなされ得ます。単一ポートの疎通確認なら上記の <code>Test-NetConnection</code> / <code>nc</code> で十分です。</p>
+</div>
+</section>
+
+<section id="tls">
+<h2>4. 暗号化(TLS / 証明書)— HTTPSが正しく成立するか</h2>
+
+<p>
+<strong>対象レイヤ:</strong> <a href="http.html#https">暗号化(TLS)</a>(TCPとHTTPの間)。
+<strong>何を見る:</strong> <strong>TLSハンドシェイクが成功するか</strong>、サーバ証明書は<strong>誰が発行した何者で、有効期限内か</strong>、
+使われているプロトコル版・暗号方式。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">Windows(PowerShell / コマンド)</p>
+<pre><code># 本物の curl で詳細表示(TLSの様子も出る)
+curl.exe -v https://example.com/
+
+# TCP到達性まではこれで(TLS内容は見ない)
+Test-NetConnection example.com -Port 443
+
+# 証明書を視覚的に見るなら
+#   ブラウザの DevTools → Security パネル
+#   (鍵マーク → 証明書の詳細)</code></pre>
+</div>
+<div>
+<p class="code-caption">Linux</p>
+<pre><code># TLSハンドシェイクと証明書チェーンを表示
+openssl s_client -connect example.com:443 \
+  -servername example.com
+
+# 証明書の有効期限だけ取り出す
+echo | openssl s_client -connect example.com:443 \
+  -servername example.com 2&gt;/dev/null \
+  | openssl x509 -noout -dates</code></pre>
+</div>
+</div>
+
+<p>
+<strong>目的:</strong> ブラウザの「保護されていない通信」「証明書エラー」の<strong>正体を特定</strong>すること。
+<strong>分かること・次の一手:</strong> 「証明書の期限切れ/ドメイン名の不一致/中間証明書の欠落」などが具体的に分かります。
+<code>-servername</code>(SNI)を付けるのは、1つのIPで複数サイトを配信する現代のサーバに<strong>正しいサイトの証明書を出させる</strong>ためです。
+ブラウザで手早く見たいときは <a href="devtools.html#security">DevTools の Security パネル</a>が便利です。
+</p>
+</section>
+
+<section id="http">
+<h2>5. HTTP(L7)— 応答のステータス・ヘッダ・ボディを取得する</h2>
+
+<p>
+<strong>対象レイヤ:</strong> <a href="http.html">アプリケーション層(HTTP)</a>。
+<strong>何を見る:</strong> 実際のHTTPリクエストを投げて、<strong><a href="http.html#status">ステータスコード</a>・<a href="http.html#headers">ヘッダ</a>・ボディ</strong>を受け取る。
+ここまで来れば、下の層はすべて正常という前提で「HTTPそのもの」を調べられます。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">Windows(PowerShell)</p>
+<pre><code># ヘッダと本文(ステータス・ヘッダを持つオブジェクト)
+Invoke-WebRequest https://example.com/
+
+# ヘッダだけ確認(HEAD)
+Invoke-WebRequest https://example.com/ -Method Head
+
+# JSON APIは自動でオブジェクトに変換される
+Invoke-RestMethod https://example.com/api/items
+
+# 本物の curl も使える(Windows 10 以降同梱)
+curl.exe -v https://example.com/</code></pre>
+</div>
+<div>
+<p class="code-caption">Linux</p>
+<pre><code># 生のやりとりを詳細表示
+curl -v https://example.com/
+
+# ヘッダだけ(HEAD)
+curl -I https://example.com/
+
+# どの段階で時間がかかるか計測
+curl -o /dev/null -s \
+  -w 'connect=%{time_connect} total=%{time_total}\n' \
+  https://example.com/
+
+# wget でヘッダを見る
+wget -S -O /dev/null https://example.com/</code></pre>
+</div>
+</div>
+
+<p>
+<strong>目的:</strong> ブラウザを介さず、<strong>HTTPの応答そのもの</strong>(成功か、リダイレクトか、4xx/5xxか)を確かめること。
+<strong>分かること・次の一手:</strong> ステータスとヘッダから、
+<a href="network-path.html">4xx(依頼側/ポリシー)か 5xx(サーバ側/経路)か</a>、
+どの中継装置が返したか(<code>Via</code> / <code>Server</code> ヘッダ)が読めます。ここは <a href="devtools.html#network">DevTools の Network パネル</a>と同じ情報を、コマンドで得ている形です。
+</p>
+
+<div class="warn">
+<p><strong>PowerShell の <code>curl</code> は本物とは限りません。</strong>
+Windows PowerShell では <code>curl</code> と <code>wget</code> が <code>Invoke-WebRequest</code> の<strong>別名(エイリアス)</strong>になっていることがあります。
+本物の curl を使いたいときは、必ず <strong><code>curl.exe</code></strong> と拡張子まで書いて呼び分けてください。</p>
+</div>
+</section>
+
+<section id="capture">
+<h2>6. パケットキャプチャ(全層)— 最後の手段として生の通信を見る</h2>
+
+<p>
+<strong>対象レイヤ:</strong> すべての層(実際に流れているパケットそのもの)。
+<strong>何を見る:</strong> ネットワークを流れる生のパケットを<strong>捕まえて記録</strong>し、後から1つずつ中身を確認する。
+</p>
+
+<div class="http-pair side">
+<div>
+<p class="code-caption">Windows</p>
+<pre><code># 標準搭載のパケットモニタ
+pktmon start --capture
+pktmon stop
+#   → 記録を pcapng に変換して Wireshark で解析
+
+# 定番GUIツール(要インストール)
+#   Wireshark</code></pre>
+</div>
+<div>
+<p class="code-caption">Linux</p>
+<pre><code># 特定ホストの通信だけ記録
+sudo tcpdump -i any host example.com -w cap.pcap
+
+# 画面で流し見(HTTPポート)
+sudo tcpdump -i any port 80 -A</code></pre>
+</div>
+</div>
+
+<p>
+<strong>目的:</strong> 上のツール(ping〜curl)で切り分けきれない<strong>込み入った問題の最終確認</strong>。
+「TCPのやりとりのどこで切れたか」「再送が多いか」など、他のツールでは見えない挙動を直接観察できます。
+<strong>分かること・次の一手:</strong> 通信の生の流れが分かるため確実ですが、<strong>読み解きに知識が要る上級ツール</strong>です。
+まずは 1〜5 のツールで層を絞り込み、どうしても分からないときにここへ来る、という順番が効率的です。
+</p>
+
+<div class="point">
+<p><strong>この順番こそが「迷わない」コツです。</strong>
+到達性(L3)→ 名前解決(DNS)→ ポート(L4)→ TLS → HTTP(L7)と、
+<strong>下から一枚ずつ「ここは正常」を確定</strong>していけば、問題は必ずどこかの層で特定できます。
+エラーメッセージを睨むより、この順で潰すほうが速く確実です。
+切り分けの具体的な進め方は <a href="network-path.html#investigate">経路とエラー:原因の調べ方</a>も参照してください。</p>
+</div>
+</section>
+
+<nav class="page-nav">
+  <a class="prev" href="devtools.html"><span class="nav-dir">前のページ</span>ブラウザ開発者ツール(DevTools)</a>
+  <a class="next" href="glossary.html"><span class="nav-dir">次のページ</span>用語集</a>
+</nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>「Webを支える技術」学習サイト — HTTP・URI・HTML・REST を体系的に学ぶための教材です。<br>
+    参考書籍: 『Webを支える技術 — HTTP、URI、HTML、そしてREST』(山本陽平 著、技術評論社)</p>
+  </div>
+</footer>
+</body>
+</html>

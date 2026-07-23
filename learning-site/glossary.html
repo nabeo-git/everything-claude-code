@@ -22,6 +22,8 @@
       <a href="ajax.html">Ajax</a>
       <a href="api-design.html">API設計</a>
       <a href="network-path.html">経路とエラー</a>
+      <a href="devtools.html">DevTools</a>
+      <a href="cli-tools.html">CLI診断</a>
       <a href="glossary.html" aria-current="page">用語集</a>
     </nav>
   </div>
@@ -213,6 +215,27 @@
 
   <dt>502 / 503 / 504(ゲートウェイ系のエラー)</dt>
   <dd>いずれも5xx(サーバ側の失敗)。502=上流から不正な応答、503=一時的に応答できない(過負荷・メンテ、ブロックの合図にも流用される)、504=上流が時間内に応答しない(タイムアウト)。中継装置が「上流に届かなかった/提供できない」ときに返す。→ <a href="network-path.html">経路とエラー</a></dd>
+
+  <dt>ping / ICMP</dt>
+  <dd>相手ホストまでパケットが往復できるか(L3の到達性)を確かめる基本ツールと、その土台のプロトコル。「届くか」の最初の目安。ただしICMPだけ遮断されることもあり、ping不通=障害とは限らない。→ <a href="cli-tools.html#reachability">CLI診断</a></dd>
+
+  <dt>traceroute / tracert</dt>
+  <dd>相手までの経路(通過する中継点=ホップ)を順にたどり、どこで止まるかを見るツール。Linuxは <code>traceroute</code>、Windowsは <code>tracert</code>。→ <a href="cli-tools.html#reachability">CLI診断</a></dd>
+
+  <dt>Test-NetConnection(PowerShell)</dt>
+  <dd>Windowsの多機能な疎通確認コマンド。<code>-Port</code> で特定ポートにTCP接続できるか(L4)、<code>-TraceRoute</code> で経路を確認できる。<code>Test-Connection</code> はICMP ping相当。→ <a href="cli-tools.html#port">CLI診断</a></dd>
+
+  <dt>ss / netstat</dt>
+  <dd>今つながっている/待ち受けているTCP・UDPの接続一覧を表示するツール(L4)。どのポートが開いているか、どこと通信中かが分かる。→ <a href="cli-tools.html#port">CLI診断</a></dd>
+
+  <dt>Invoke-WebRequest / Invoke-RestMethod(PowerShell)</dt>
+  <dd>PowerShellでHTTPリクエストを送るコマンド。前者はステータス・ヘッダ・本文を持つ応答を返し、後者はJSONを自動でオブジェクトに変換する。curl / wget のWindows版にあたる。→ <a href="cli-tools.html#http">CLI診断</a></dd>
+
+  <dt>openssl s_client</dt>
+  <dd>TLSハンドシェイクを実際に行い、サーバ証明書の中身(発行者・有効期限・対象ドメイン)やプロトコル版を確認するツール(TLS層)。→ <a href="cli-tools.html#tls">CLI診断</a></dd>
+
+  <dt>パケットキャプチャ(tcpdump / pktmon / Wireshark)</dt>
+  <dd>ネットワークを流れる生のパケットを捕まえて記録し、後から中身を解析する上級ツール。他のツールで切り分かないときの最終手段。→ <a href="cli-tools.html#capture">CLI診断</a></dd>
 </dl>
 </section>
 
@@ -356,6 +379,15 @@
 
   <dt>WebSocket</dt>
   <dd>クライアントとサーバが接続をつなぎっぱなしにして、双方向にデータを送り合えるプロトコル。チャットや通知など「サーバ側から話しかけたい」場面で使う。リクエスト/レスポンス型のHTTPを補う存在。→ <a href="ajax.html">Ajax</a></dd>
+
+  <dt>開発者ツール(DevTools)</dt>
+  <dd>ブラウザに内蔵された調査用の道具箱。F12で開き、HTML構造・CSS・JavaScript・HTTP通信などをサーバに触れず観察できる。Edge も Chrome も同じ Chromium 系で共通。→ <a href="devtools.html">DevTools</a></dd>
+
+  <dt>Networkパネル</dt>
+  <dd>DevToolsの中で、発生したHTTPリクエスト/レスポンスを一覧・詳細表示するパネル。ステータス・ヘッダ・ボディ・所要時間が見え、<code>curl -v</code> のGUI版にあたる。→ <a href="devtools.html#network">DevTools</a></dd>
+
+  <dt>Elementsパネル / DOM</dt>
+  <dd>Elementsパネルは、ブラウザが組み立てた描画後のHTML構造(DOM)と適用中のCSSを見るパネル。生のHTMLではなく、JavaScriptの変更も反映した「今の構造」を表す。→ <a href="devtools.html#elements">DevTools</a></dd>
 </dl>
 
 <div class="modern">

@@ -27,6 +27,8 @@ npx serve learning-site
 | `ajax.html` | Ajax — fetch のコードと実際の HTTP メッセージの対応、CORS、SPA | 第4部(現代補完) |
 | `api-design.html` | API設計 — 架空の書店 API を題材にした設計手順 | 第5部 Webサービスの設計 |
 | `network-path.html` | 経路とエラー(実作業編) — プロキシ・FW・パケットフィルタの挙動差、403/503 の見分け方と原因調査の手順 | 付録(実務ノウハウ) |
+| `devtools.html` | DevTools(診断ツール編) — Chromium/Edge 開発者ツールの各パネルが「どの層の何を見る道具か」 | 付録(診断ツール) |
+| `cli-tools.html` | CLI診断(診断ツール編) — Windows/Linux 標準コマンド(Test-NetConnection・ping・dig・curl・openssl 等)をレイヤ別に整理 | 付録(診断ツール) |
 | `glossary.html` | 用語集 — 各用語が「どの層の話か」を併記した索引 | — |
 | `style.css` | 共通スタイル(ライト/ダークテーマ対応、外部 CDN 不使用) | — |
 
