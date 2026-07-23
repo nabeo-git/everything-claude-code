@@ -21,6 +21,7 @@
       <a href="rpc.html">RPC/SOAP</a>
       <a href="ajax.html">Ajax</a>
       <a href="api-design.html">API設計</a>
+      <a href="network-path.html">経路とエラー</a>
       <a href="glossary.html" aria-current="page">用語集</a>
     </nav>
   </div>
@@ -194,6 +195,24 @@
 
   <dt>HTTP/3</dt>
   <dd>2022年に標準化された最新版。土台の通信方式をTCPからQUIC(UDPベース)に替えてさらに高速化した。これも「意味の部分」はHTTP/1.1から不変。→ <a href="http.html">HTTP</a></dd>
+
+  <dt>プロキシ(proxy)</dt>
+  <dd>クライアントとサーバの通信を中継する機器。HTTPを理解して動くアプリケーション層の中継役で、リクエストを代理で送ったり、応答をキャッシュしたりする。エラー時は<strong>自分でHTTP応答を生成して返す</strong>ことがある。→ <a href="network-path.html">経路とエラー</a></dd>
+
+  <dt>フォワードプロキシ / リバースプロキシ</dt>
+  <dd>フォワードプロキシは<strong>クライアント側</strong>に立ち、組織の「外部への出口」としてアクセス制御(ACL)やログ取得を担う(例: Squid)。リバースプロキシは<strong>サーバ側</strong>に立ち、複数のサーバへの振り分けや負荷分散を担う。→ <a href="network-path.html">経路とエラー</a></dd>
+
+  <dt>ゲートウェイ(gateway)</dt>
+  <dd>目的のサーバの手前で受け付け、上流(本当のサーバ)に取り次ぐ中継役。上流に届かなければ、<strong>自分で 502 や 504 を返す</strong>。→ <a href="network-path.html">経路とエラー</a></dd>
+
+  <dt>ファイアウォール / パケットフィルタ</dt>
+  <dd>通信を通す・通さないを判断する防御機器。基本はIPアドレスやポートを見るネットワーク層(L3/L4)の機器で、<strong>HTTPの中身は見ない</strong>。遮断は「黙って破棄(DROP)→タイムアウト」か「RSTで拒否(REJECT)→即座に接続拒否」で、<strong>HTTPコードは出さない</strong>のが原則。→ <a href="network-path.html">経路とエラー</a></dd>
+
+  <dt>403 Forbidden</dt>
+  <dd>「理解したが、認可を拒否する」ことを表す4xx(クライアントエラー)。認証をやり直しても解決しない点が401と違う。プロキシがACLでアクセスを拒否したときの標準的な応答でもある。→ <a href="network-path.html">経路とエラー</a></dd>
+
+  <dt>502 / 503 / 504(ゲートウェイ系のエラー)</dt>
+  <dd>いずれも5xx(サーバ側の失敗)。502=上流から不正な応答、503=一時的に応答できない(過負荷・メンテ、ブロックの合図にも流用される)、504=上流が時間内に応答しない(タイムアウト)。中継装置が「上流に届かなかった/提供できない」ときに返す。→ <a href="network-path.html">経路とエラー</a></dd>
 </dl>
 </section>
 

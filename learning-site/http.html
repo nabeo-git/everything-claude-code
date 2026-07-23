@@ -21,6 +21,7 @@
       <a href="rpc.html">RPC/SOAP</a>
       <a href="ajax.html">Ajax</a>
       <a href="api-design.html">API設計</a>
+      <a href="network-path.html">経路とエラー</a>
       <a href="glossary.html">用語集</a>
     </nav>
   </div>
@@ -363,6 +364,39 @@ Content-Type: text/html; charset=utf-8
 <p>ステータスコードは<strong>プログラムが機械的に分岐できる</strong>ように数字になっています。
 Web APIの設計では「成功したのに200でエラーメッセージを返す」ような使い方は嫌われます。
 → <a href="api-design.html">API設計のページ</a></p>
+</div>
+
+<h3>そのエラー、誰が返している? — 経路上の中継装置と4xx/5xx</h3>
+
+<p>
+ステータスコードを読むとき、見落としがちな前提があります。
+<strong>HTTP応答は、目的のサーバ(オリジン)だけが返すとは限らない</strong>ということです。
+通信の途中には<strong>プロキシ・ゲートウェイ・キャッシュ・ファイアウォール</strong>といった中継装置が並んでいて、
+そのどれかが<strong>オリジンの代わりにエラーを生成して返す</strong>ことがあります。
+つまり、画面に出たコードは「目的のサーバの返事」ではなく<strong>「途中の関所の判断」</strong>かもしれません。
+</p>
+
+<p>
+このとき、さきほどの<strong>4xxと5xxの違い</strong>が「どちらの立場のエラーか」を読む手がかりになります。
+<strong>4xx は「あなたの依頼を拒否」(リクエスト側・ポリシーの問題)</strong>、
+<strong>5xx は「サービスを果たせなかった」(サーバ側・経路側の問題)</strong>です。
+</p>
+
+<div class="analogy">
+<p><strong>実例:社内プロキシとファイアウォールが別のコードを返す。</strong>
+組織のネットワークで外部サイトへアクセスしたとき、
+出口の<strong>プロキシ(Squid)がポリシーで拒否</strong>すると、Squid自身が <code>403 Forbidden</code> を返します
+(<code>4xx</code>=「この宛先へ出る依頼を拒否」なので意味的にも正しい)。
+一方、経路上の<strong>ファイアウォールがブロックの合図として <code>503 Service Unavailable</code></strong> を返すこともあります
+(<code>5xx</code>=「サービスを提供できない」で、恒久的な禁止の合図に使うと本来の意味からは少しズレる)。
+同じ「アクセスできない」でも、<strong>機器によって返すコードのクラスが違う</strong>のです。</p>
+</div>
+
+<div class="note">
+<p>どの機器が・なぜそのコードを返したのかを<strong>見分け、原因を切り分ける具体的な手順</strong>は、
+実作業編として別ページにまとめました。パケットフィルタ(DROP/REJECT)の挙動の違いや、
+<code>curl -v</code>・<code>Via</code>ヘッダ・ログでの調べ方まで扱います。
+→ <a href="network-path.html">経路とエラー — プロキシ・FW・パケットフィルタの実作業ノウハウ</a></p>
 </div>
 </section>
 

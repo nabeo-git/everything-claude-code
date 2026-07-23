@@ -26,6 +26,7 @@ npx serve learning-site
 | `rpc.html` | RPC/SOAP — HTTP POST をトンネルにする SOAP・XML-RPC、REST との対比、「POST の誤用?」論点 | 第3部・第7部(RESTとRPCの対比) |
 | `ajax.html` | Ajax — fetch のコードと実際の HTTP メッセージの対応、CORS、SPA | 第4部(現代補完) |
 | `api-design.html` | API設計 — 架空の書店 API を題材にした設計手順 | 第5部 Webサービスの設計 |
+| `network-path.html` | 経路とエラー(実作業編) — プロキシ・FW・パケットフィルタの挙動差、403/503 の見分け方と原因調査の手順 | 付録(実務ノウハウ) |
 | `glossary.html` | 用語集 — 各用語が「どの層の話か」を併記した索引 | — |
 | `style.css` | 共通スタイル(ライト/ダークテーマ対応、外部 CDN 不使用) | — |
 
