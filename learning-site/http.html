@@ -420,7 +420,7 @@ Web APIの設計では「成功したのに200でエラーメッセージを返�
   </thead>
   <tbody>
     <tr><td>Host</td><td>リクエスト</td><td>宛先のサーバ名。1台のサーバが複数のサイトを担当できるのはこのヘッダのおかげ。HTTP/1.1で唯一の必須ヘッダ。</td></tr>
-    <tr><td>Content-Type</td><td>両方</td><td>ボディの種類を<strong>MIMEタイプ</strong>で示す。MIMEタイプは「大分類/小分類」形式のデータ形式ラベルで、<code>text/html</code>(HTML)、<code>application/json</code>(JSON)、<code>image/png</code>(PNG画像)など。受け取った側はこれを見て解釈方法を決める。</td></tr>
+    <tr><td>Content-Type</td><td>両方</td><td>ボディの種類を<strong>メディアタイプ(MIMEタイプとも呼ぶ)</strong>で示す。これは「大分類/小分類」形式のデータ形式ラベルで、<code>text/html</code>(HTML)、<code>application/json</code>(JSON)、<code>image/png</code>(PNG画像)など。受け取った側はこれを見て解釈方法を決める。</td></tr>
     <tr><td>Content-Length</td><td>両方</td><td>ボディのサイズ(バイト数)。どこまで読めばメッセージの終わりかを知らせる。</td></tr>
     <tr><td>Content-Disposition</td><td>レスポンス</td><td>ボディを画面に表示(inline)するか、ファイルとしてダウンロード(attachment)させるかを指示する。保存時のファイル名も指定できる(後述)。</td></tr>
     <tr><td>Accept</td><td>リクエスト</td><td>「私はこの形式が受け取れます」という希望(<code>text/html</code>、<code>application/json</code> など)。サーバが表現を出し分ける手がかり。</td></tr>
@@ -492,7 +492,7 @@ Content-Disposition: attachment;
 
 <p>
 <code>filename*=UTF-8''…</code> の「<code>UTF-8''</code>」は文字コードの宣言で、続く <code>%E5%A0%B1…</code> は
-「報告書.pdf」をUTF-8で<a href="uri.html">%エンコーディング</a>したものです。
+「報告書.pdf」をUTF-8で<a href="uri.html#encoding">%エンコーディング</a>したものです。
 <strong>古いブラウザ用に <code>filename="report.pdf"</code>(ASCIIの予備)も併記し、対応ブラウザには <code>filename*</code> を使わせる</strong>のが定石です。
 現在の主要ブラウザは <code>filename*</code> に対応しているので、この書き方なら日本語ファイル名も文字化けせず保存できます。
 </p>
@@ -795,7 +795,7 @@ GETやPOSTというメソッドの意味も、404や200というステータス�
 </p>
 
 <div class="note">
-<p>次のページでは、HTTPが運んでいる「中身」——HTMLをはじめとする表現(レプリゼンテーション)——に進みます。
+<p>次のページでは、HTTPが運んでいる「中身」——HTMLをはじめとする表現(リプレゼンテーション)——に進みます。
 → <a href="html.html">HTMLのページ</a>。
 また、メソッドとステータスコードを設計にどう活かすかは<a href="rest.html">REST</a>と<a href="api-design.html">API設計</a>で扱います。</p>
 </div>

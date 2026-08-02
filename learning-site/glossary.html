@@ -145,7 +145,7 @@
   <dd>URIに使えない文字(日本語や空白など)を <code>%XX</code> 形式で表す変換ルール。例: 「あ」は <code>%E3%81%82</code>。→ <a href="uri.html">URI</a></dd>
 
   <dt>クールURI(Cool URIs)</dt>
-  <dd>「クールなURIは変わらない」という設計指針。一度公開したURIを変えない・壊さないことで、リンク切れを防ぎ、Webの信頼性を保つ。API設計にも適用される。→ <a href="uri.html">URI</a> / <a href="api-design.html">API設計</a></dd>
+  <dd>「クールなURIは変わらない」という設計指針。一度公開したURIを変えない・壊さないことで、リンク切れを防ぎ、Webの信頼性を保つ。API設計にも適用される。→ <a href="uri.html#cool-uri">URI</a> / <a href="api-design.html">API設計</a></dd>
 </dl>
 </section>
 
@@ -186,8 +186,8 @@
   <dt>ヘッダ(header)</dt>
   <dd>リクエストやレスポンスに付ける「名前: 値」形式のメタ情報。中身の形式(Content-Type)、キャッシュの指示、認証情報などを運ぶ。→ <a href="http.html">HTTP</a></dd>
 
-  <dt>MIMEタイプ(Content-Type)</dt>
-  <dd>データの種類を表す「大分類/小分類」形式のラベル。例: <code>text/html</code>、<code>application/json</code>。レスポンスではContent-Typeヘッダで伝えられ、受け手はこれを見て解釈方法を決める。→ <a href="http.html">HTTP</a></dd>
+  <dt>メディアタイプ(MIMEタイプ)</dt>
+  <dd>データの種類を表す「大分類/小分類」形式のラベル。MIMEタイプとも呼ぶ。例: <code>text/html</code>、<code>application/json</code>。この値を運ぶヘッダ名が <code>Content-Type</code> で、受け手はこれを見て解釈方法を決める。→ <a href="http.html">HTTP</a></dd>
 
   <dt>ステートレス(stateless)</dt>
   <dd>サーバがクライアントの状態(前回のやりとり)を覚えず、毎回のリクエストに必要な情報をすべて含めさせる方式。サーバを増やしやすくなり、Webの拡張性の要となっている。→ <a href="http.html">HTTP</a> / <a href="rest.html">REST</a></dd>
@@ -223,7 +223,7 @@
   <dd>1本の接続で、前のレスポンスを待たずにリクエストを連続送信する仕組み。ただしレスポンスは送信順に返す必要があり(先頭詰まり)、実装も不安定なため、ブラウザでは事実上使われない。→ <a href="http.html#connections">HTTP:持続的接続</a></dd>
 
   <dt>多重化(multiplexing)</dt>
-  <dd>1本の接続の中で、多数のリクエスト/レスポンスを順不同で同時にやりとりする方式。HTTP/2で導入され、パイプラインの「先頭詰まり」を解消した。HTTP/1.1が複数接続で並列化していたのを1接続に統合した形。→ <a href="http.html#connections">HTTP:持続的接続</a></dd>
+  <dd>1本の接続の中で、多数のリクエスト/レスポンスを順不同で同時にやりとりする方式。HTTP/2で導入され、パイプラインの「先頭詰まり」を(HTTPの層で)解消した。HTTP/1.1が複数接続で並列化していたのを1接続に統合した形。→ <a href="http.html#connections">HTTP:持続的接続</a></dd>
 
   <dt>Content-Disposition</dt>
   <dd>ボディを画面に表示(inline)するか、ファイルとして保存(attachment)させるかを指示するレスポンスヘッダ。保存名も指定でき、日本語名は <code>filename*=UTF-8''…</code> の%エンコーディングで正しく渡す。→ <a href="http.html#headers">HTTP:ヘッダ</a></dd>
@@ -319,7 +319,7 @@
   <dd>データ管理の4つの基本操作 Create(作成)/Read(読み取り)/Update(更新)/Delete(削除)の頭文字。HTTPメソッドのPOST/GET/PUT/DELETEときれいに対応する。→ <a href="rest.html">REST</a></dd>
 
   <dt>エンドポイント(endpoint)</dt>
-  <dd>APIの窓口となる個々のURI(とメソッドの組)。例: <code>GET /books/42</code>。エンドポイントの一覧がAPI仕様の骨格になる。→ <a href="api-design.html">API設計</a></dd>
+  <dd>APIの窓口となる個々のURI。例: <code>/books/42</code>。1つのURIに複数のHTTPメソッドを割り当てられ、そのURIの一覧がAPI仕様の骨格になる。→ <a href="api-design.html">API設計</a></dd>
 
   <dt>Web API</dt>
   <dd>プログラム同士がHTTPでデータをやりとりするための窓口。人間向けのWebサイトと同じ仕組み(URI+HTTP+表現)を、JSONなどのプログラム向け表現で使うもの。→ <a href="index.html">全体像</a> / <a href="api-design.html">API設計</a></dd>

@@ -262,6 +262,15 @@ DNS(名前解決)→ TCP(到達性)→ TLS(暗号化)→ HTTP(アプリケーシ
 下の層から順に「ここは正常」と確認していけば、問題が<strong>どの層・どの機器</strong>にあるかが必ず絞れます。
 エラーコードだけを睨むより、この順で潰すほうが速く確実です。</p>
 </div>
+
+<div class="note">
+<p>ここで使う各コマンドの<strong>正体・対象レイヤ・Windows/Linux の対応</strong>は、道具の図鑑
+<a href="cli-tools.html">CLI診断ツール</a>にまとめてあります(到達性=<a href="cli-tools.html#reachability">ping / traceroute</a>、
+ポート=<a href="cli-tools.html#port">nc / Test-NetConnection</a>、名前解決=<a href="cli-tools.html#dns">dig</a>、
+TLS=<a href="cli-tools.html#tls">openssl</a>、HTTP=<a href="cli-tools.html#http">curl</a>)。
+このページは<strong>「どの順で使うか(手順)」</strong>、CLI診断は<strong>「各道具が何を・どの層で見るか(図鑑)」</strong>という役割分担です。
+同じ観察をブラウザだけで行うなら <a href="devtools.html#network">DevTools の Network パネル</a>が使えます。</p>
+</div>
 </section>
 
 <section id="case">

@@ -171,7 +171,7 @@ URNは名前を解決して実物にたどり着く仕組みが普及しなか�
     <tr><td>ホスト</td><td><code>www.example.com</code></td><td>リソースを持つサーバの名前(ドメイン名)。インターネット全体で一意。DNSという仕組みでIPアドレスに変換される。</td></tr>
     <tr><td>ポート番号</td><td><code>:8080</code></td><td>そのサーバの「窓口番号」。省略するとスキームごとの標準番号(デフォルトポート)が使われる。HTTPは80番、HTTPSは443番。</td></tr>
     <tr><td>パス</td><td><code>/users/123/posts</code></td><td>サーバ内でリソースを指す階層的な道筋。フォルダ構造のように <code>/</code> で区切る。ホスト+パスでリソースが一意に決まる。</td></tr>
-    <tr><td>クエリ</td><td><code>?page=2&amp;sort=new</code></td><td>追加の条件やパラメータ。<code>?</code> の後に「名前=値」を <code>&amp;</code> でつないで並べる。検索条件やページ番号によく使う。</td></tr>
+    <tr><td>クエリ</td><td><code>?page=2&amp;sort=new</code></td><td>追加の条件やパラメータ。<code>?</code> の後に「名前=値」を <code>&amp;</code> でつないで並べる。検索条件やページ番号によく使う。個々の「名前=値」の組を<strong>クエリパラメータ</strong>と呼ぶ。</td></tr>
     <tr><td>フラグメント</td><td><code>#comments</code></td><td>取得したリソースの<strong>内部の特定箇所</strong>を指す。ページ内の見出しへのジャンプなどに使う。サーバには送られず、クライアント側で解釈される。</td></tr>
   </tbody>
 </table>
@@ -346,7 +346,7 @@ URIは単独で働くのではなく、次の3つの文脈で他の技術に埋�
 <pre class="req"><code>GET /users/123 HTTP/1.1
 Host: example.com</code></pre>
 
-<p>HTTPリクエストの1行目には、URIのパス部分がそのまま書かれます(ホスト部分はHostヘッダに分けて書きます)。→ <a href="http.html">HTTPのページ</a></p>
+<p>HTTPリクエストの1行目には、URIのパス(とクエリ)がそのまま書かれます(ホスト部分はHostヘッダに分けて書きます)。→ <a href="http.html">HTTPのページ</a></p>
 
 <h3>③ Web APIのエンドポイントとして(設計の中)</h3>
 
