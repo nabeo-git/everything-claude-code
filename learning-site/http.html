@@ -62,6 +62,7 @@ HTTP(HyperText Transfer Protocol)は、<a href="uri.html">URI</a>で示された
     <li><a href="#stateless">ステートレス性</a></li>
     <li><a href="#cache">キャッシュと条件付きGET</a></li>
     <li><a href="#https">HTTPS — 暗号化されたHTTP</a></li>
+    <li><a href="#connections">持続的接続とリクエストの多重化</a></li>
     <li><a href="#versions">HTTPのバージョンの歴史</a></li>
     <li><a href="#try">手元で確認するには</a></li>
   </ol>
@@ -421,6 +422,7 @@ Web APIの設計では「成功したのに200でエラーメッセージを返�
     <tr><td>Host</td><td>リクエスト</td><td>宛先のサーバ名。1台のサーバが複数のサイトを担当できるのはこのヘッダのおかげ。HTTP/1.1で唯一の必須ヘッダ。</td></tr>
     <tr><td>Content-Type</td><td>両方</td><td>ボディの種類を<strong>MIMEタイプ</strong>で示す。MIMEタイプは「大分類/小分類」形式のデータ形式ラベルで、<code>text/html</code>(HTML)、<code>application/json</code>(JSON)、<code>image/png</code>(PNG画像)など。受け取った側はこれを見て解釈方法を決める。</td></tr>
     <tr><td>Content-Length</td><td>両方</td><td>ボディのサイズ(バイト数)。どこまで読めばメッセージの終わりかを知らせる。</td></tr>
+    <tr><td>Content-Disposition</td><td>レスポンス</td><td>ボディを画面に表示(inline)するか、ファイルとしてダウンロード(attachment)させるかを指示する。保存時のファイル名も指定できる(後述)。</td></tr>
     <tr><td>Accept</td><td>リクエスト</td><td>「私はこの形式が受け取れます」という希望(<code>text/html</code>、<code>application/json</code> など)。サーバが表現を出し分ける手がかり。</td></tr>
     <tr><td>User-Agent</td><td>リクエスト</td><td>クライアントの自己紹介(ブラウザ名やアプリ名)。</td></tr>
     <tr><td>Cache-Control</td><td>両方</td><td>キャッシュ(再利用)の可否や有効期間の指示(後述)。</td></tr>
@@ -436,6 +438,64 @@ Web APIの設計では「成功したのに200でエラーメッセージを返�
 HTTPが「メソッド+ステータスコード+ヘッダ」という骨組みを固定しつつ、
 ヘッダで拡張の余地を残していることが、30年以上使われ続けている柔軟さの源です。</p>
 </div>
+
+<h3>Content-Disposition — ファイルとして保存させる・名前を付ける</h3>
+
+<p>
+<code>Content-Disposition</code> は、<strong>「このレスポンスの中身を、ブラウザでどう扱ってほしいか」</strong>をサーバが指示するレスポンスヘッダです。値は主に2種類です。
+</p>
+
+<div class="cards">
+  <div class="card">
+    <p class="card-title">inline(既定)</p>
+    <p><strong>その場で表示</strong>してほしい。PDFや画像をブラウザ内で開くのはこれ。指定がなければ基本この扱い。</p>
+  </div>
+  <div class="card">
+    <p class="card-title">attachment</p>
+    <p><strong>ファイルとして保存(ダウンロード)</strong>してほしい。ブラウザは表示せず保存ダイアログを出す。<code>filename</code> で保存名も指定できる。</p>
+  </div>
+</div>
+
+<p class="code-caption res">レスポンス例 — CSVをダウンロードさせ、保存名を指定する</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: text/csv; charset=utf-8
+Content-Disposition: attachment; filename="report.csv"
+
+id,name,joined
+123,Sato,2024-04-01</code></pre>
+
+<p>
+<strong>何のために使うのか。</strong>利用目的は主に次のとおりで、実際のWebサービスで<strong>今も広く使われています</strong>。
+</p>
+
+<ul>
+  <li><strong>ブラウザに表示させず保存させたい</strong>とき(CSV・ZIP・請求書PDF・生成した帳票など)。<code>attachment</code> を付けないと、ブラウザが中身を開こうとしてしまう。</li>
+  <li><strong>URLと違う分かりやすい名前で保存させたい</strong>とき。ダウンロード用URLが <code>/reports/9f3c-download</code> のような機械的な文字列でも、保存名を <code>2026年度_請求書.pdf</code> にできる。</li>
+  <li><strong>動的に生成したファイル</strong>(その場で作ったCSVやPDF)に、意味のある名前を付けて渡したいとき。</li>
+</ul>
+
+<div class="warn">
+<p><strong>日本語ファイル名が「バグる」理由と正しい書き方。</strong>
+古い形式の <code>filename="報告書.pdf"</code> のように<strong>日本語をそのまま書くと文字化けする</strong>ことがあります。
+これは <code>filename</code> パラメータが本来<strong>ASCII(英数字)しか正しく扱えない</strong>ためで、
+ブラウザごとに解釈が違って文字化け(mojibake)が起きます。
+正しくは、RFC 6266 / RFC 5987 で定められた <strong><code>filename*</code>(アスタリスク付き)</strong>を使い、
+<strong>文字コードを明示して%エンコーディング</strong>した値を渡します。</p>
+</div>
+
+<p class="code-caption res">日本語ファイル名の正しい指定 — filename* を使い、UTF-8で%エンコーディング</p>
+<pre class="res"><code>HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Disposition: attachment;
+  filename="report.pdf";
+  filename*=UTF-8''%E5%A0%B1%E5%91%8A%E6%9B%B8.pdf</code></pre>
+
+<p>
+<code>filename*=UTF-8''…</code> の「<code>UTF-8''</code>」は文字コードの宣言で、続く <code>%E5%A0%B1…</code> は
+「報告書.pdf」をUTF-8で<a href="uri.html">%エンコーディング</a>したものです。
+<strong>古いブラウザ用に <code>filename="report.pdf"</code>(ASCIIの予備)も併記し、対応ブラウザには <code>filename*</code> を使わせる</strong>のが定石です。
+現在の主要ブラウザは <code>filename*</code> に対応しているので、この書き方なら日本語ファイル名も文字化けせず保存できます。
+</p>
 </section>
 
 <section id="stateless">
@@ -589,6 +649,86 @@ HTTPSは次の3つを守ります。
 ブラウザはHTTPのサイトに「保護されていない通信」と警告を出し、アドレスバーの鍵マークが標準の光景になりました。
 転機は、証明書を無料で自動発行するLet's Encrypt(2016年正式サービス開始)の登場です。
 また、後述のHTTP/2以降は主要ブラウザが事実上HTTPSでしか通信しないため、「暗号化は前提」の時代になっています。</p>
+</div>
+</section>
+
+<section id="connections">
+<h2>持続的接続とリクエストの多重化</h2>
+
+<p>
+1つのWebページは、HTML本体だけでなく<strong>CSS・JavaScript・画像・Web APIのデータ</strong>など、
+何十個ものリソースからできています。これらを<strong>いかに速く取りに行くか</strong>が、
+HTTPの「運び方」の進化の歴史です。ここは「HTTP/1.1で次々にリクエストを送れるのか?」という疑問の答えになる節です。
+</p>
+
+<h3>持続的接続(keep-alive)— 接続を使い回す</h3>
+
+<p>
+HTTP/1.0では、リクエスト1つごとに<strong>TCP接続を開いて・使って・閉じる</strong>を繰り返していました。
+接続を開く手続き(ハンドシェイク)は毎回それなりの時間がかかるので、リソースが多いページほど遅くなります。
+HTTP/1.1では<strong>持続的接続(keep-alive)</strong>が既定になり、
+<strong>1本のTCP接続を開いたまま、複数のリクエスト/レスポンスを続けて</strong>やりとりできるようになりました。
+接続の開け閉めが減るぶん速くなります。
+</p>
+
+<h3>「レスポンスを待たずに次々に送れるか?」— パイプラインの理想と現実</h3>
+
+<p>
+ご質問の核心です。HTTP/1.1には<strong>パイプライン(pipelining)</strong>という仕組みが仕様上あり、
+<strong>1本の接続で、前のレスポンスを待たずにリクエストを連続で送る</strong>ことが「一応」できます。
+ところが、これは<strong>ほとんど使われていません</strong>。理由は<strong>レスポンスを送った順に返さなければならない</strong>という決まりです。
+</p>
+
+<div class="analogy">
+<p><strong>1列のレジにたとえると。</strong>
+パイプラインは「注文を先にまとめて全部言う」ようなものですが、
+<strong>商品は注文した順にしか出てこない</strong>決まりです。
+先頭の注文が時間のかかる品だと、後ろの軽い注文まで全部つかえて待たされます。
+これを<strong>ヘッドオブラインブロッキング(先頭詰まり)</strong>と呼びます。
+この弱点と実装の不具合のため、<strong>主要ブラウザはパイプラインを既定で無効</strong>にしており、事実上の廃止状態です。</p>
+</div>
+
+<h3>では実際の「並列」はどうやって? — 複数接続と多重化</h3>
+
+<p>
+「画像やデータを同時並行で取りに行く」という体感は本物です。ただしその実現方法がバージョンで違います。
+</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>方式</th><th>接続の数</th><th>待たずに送れる?</th><th>順不同で受け取れる?</th><th>実際の利用</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>逐次(HTTP/1.1 keep-alive)</td><td>1本を使い回す</td><td>×(1往復ずつ)</td><td>×</td><td>基本形</td></tr>
+    <tr><td>パイプライン(HTTP/1.1)</td><td>1本</td><td>○(連続送信)</td><td>×(送った順に返る=先頭詰まり)</td><td><strong>ほぼ使われない</strong></td></tr>
+    <tr><td><strong>並列接続</strong>(HTTP/1.1)</td><td><strong>複数(1オリジンあたり6本程度)</strong></td><td>○(接続ごとに独立)</td><td>△(接続をまたげば同時)</td><td><strong>HTTP/1.1の実際の並列手段</strong></td></tr>
+    <tr><td><strong>多重化</strong>(HTTP/2以降)</td><td>1本</td><td>○</td><td><strong>○(順不同で同時)</strong></td><td>現在の主流</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+つまりHTTP/1.1では、ブラウザは<strong>1つのサーバに対してTCP接続を複数本(6本程度)張り</strong>、
+そこに画像やCSSのリクエストを振り分けることで並列化していました(パイプラインではなく複数接続で並列にしていた)。
+HTTP/2ではこれが洗練され、<strong>1本の接続の中で、多数のリクエスト/レスポンスを順不同で同時にやりとりする「多重化」</strong>が実現し、
+先頭詰まりの問題も(HTTPの層では)解消されました。
+</p>
+
+<div class="point">
+<p><strong>ご質問の2つのイメージへの答え。</strong><br>
+・「ページ表示が半端な状態ごとに<strong>別のページへ遷移</strong>していくイメージ?」→ <strong>いいえ。</strong>
+持続的接続は<strong>1つのページを構成する多数の部品(画像・CSS・JS・APIデータ)</strong>を効率よく取りに行く話で、ページの遷移とは無関係です。<br>
+・「画像の表示・データ取得を<strong>並列で処理依頼</strong>するイメージ?」→ <strong>はい、そちらが正解に近い</strong>です。
+1ページ内の多数のリソースを同時並行で取得します。HTTP/1.1では<strong>複数のTCP接続</strong>で、HTTP/2以降は<strong>1接続の多重化</strong>で並列化します。</p>
+</div>
+
+<div class="note">
+<p><strong>「半端な状態」の正体は、接続ではなくレンダリング。</strong>
+ページが少しずつ表示されていく(まず文字、次に画像…)のは、
+ブラウザが<strong>届いたリソースから順に画面を組み立てていく「段階的レンダリング」</strong>の働きで、接続の使い回しとは別の話です。
+「通信の並列化(接続の話)」と「表示の段階的な組み立て(描画の話)」を分けて捉えると、混乱しません。
+実際の通信の並列の様子は <a href="devtools.html#network">DevToolsのNetworkパネル</a>の Waterfall で見られます。</p>
 </div>
 </section>
 

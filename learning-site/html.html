@@ -60,6 +60,7 @@ Webの技術体系における<strong>「リソースの表現」</strong>とし
     <li><a href="#tags">代表的なタグとセマンティックHTML</a></li>
     <li><a href="#hypermedia">ハイパーメディアとしてのHTML — aタグとform</a></li>
     <li><a href="#formats">HTML以外の表現フォーマット — XML・JSONと現在の姿</a></li>
+    <li><a href="#hypermedia-formats">ハイパーメディアフォーマット総覧 — HTML・microformats・Atom・AtomPub・JSON</a></li>
     <li><a href="#modern-html">現在のHTML標準 — Living Standardの時代</a></li>
   </ol>
 </div>
@@ -453,6 +454,85 @@ SNSでリンクを貼ると画像付きカードが表示されるのはOGPを�
 検索結果にレシピの調理時間やイベント日程が出るのはJSON-LDを、それぞれのサービスが読んでいるからです。
 「同じHTMLの中に、人間向けの表現と機械向けの表現が同居している」わけです。
 </p>
+</section>
+
+<section id="hypermedia-formats">
+<h2>ハイパーメディアフォーマット総覧 — HTML・microformats・Atom・AtomPub・JSON</h2>
+
+<p>
+書籍『Webを支える技術』第4部では、リソースの表現として
+<strong>HTML・microformats・Atom・Atom Publishing Protocol・JSON</strong>が取り上げられています。
+名前が似ていて混同しやすいので、まず<strong>いちばん大事な区別</strong>から押さえましょう。
+</p>
+
+<div class="point">
+<p><strong>「フォーマット(表現)」と「プロトコル(操作の手順)」は別物です。</strong>
+HTML・microformats・Atom・JSON は<strong>データの書き方=フォーマット</strong>です。
+これに対して <strong>Atom Publishing Protocol(AtomPub)だけは、そのデータを作成・編集するための「手順=プロトコル」</strong>です。
+「名詞(データ)」と「動詞(操作)」の違い、と捉えると混乱しません。</p>
+</div>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>名前</th><th>種類</th><th>土台</th><th>リンク内蔵</th><th>主な用途</th><th>現在の位置づけ</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>HTML</td><td>フォーマット</td><td>HTML系</td><td>○(a / form)</td><td>人間が読むWebページ</td><td>現役の主役(人間向け)</td></tr>
+    <tr><td>microformats</td><td>フォーマット(規約)</td><td>HTMLに相乗り</td><td>HTMLに準じる</td><td>人間向けHTMLに機械可読な意味を埋め込む</td><td>JSON-LD/schema.orgへ移行</td></tr>
+    <tr><td>Atom</td><td>フォーマット</td><td>XML</td><td>○(link要素)</td><td>更新情報の一覧(フィード)</td><td>RSSと並ぶ標準。現役</td></tr>
+    <tr><td>AtomPub</td><td><strong>プロトコル</strong></td><td>HTTP + Atom</td><td>—</td><td>フィード項目の作成・編集(CRUD)</td><td>REST APIの先駆。今は下火</td></tr>
+    <tr><td>JSON</td><td>フォーマット</td><td>JSON</td><td>×(規約で補う)</td><td>プログラム間・Web API</td><td>現役の主役(機械向け)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>それぞれの特徴を、もう少し詳しく見ていきます。</p>
+
+<dl class="term-list">
+  <dt>HTML — 人間向けハイパーメディアの主役</dt>
+  <dd>ブラウザで人間が読むための表現。<code>&lt;a&gt;</code> でリンク(次の取得先)を、<code>&lt;form&gt;</code> で操作(次の送信先)を<strong>文書の中に埋め込める</strong>のが最大の特徴で、これがまさに「ハイパーメディア」の核心です。→ <a href="#hypermedia">aタグとform</a></dd>
+
+  <dt>microformats — HTMLに機械可読な意味を相乗りさせる規約</dt>
+  <dd>独立した新フォーマットではなく、<strong>既存のHTMLの <code>class</code> 属性に決まった名前を付ける約束事</strong>です(例: 連絡先を表す <code>h-card</code>、記事を表す <code>h-entry</code>)。狙いは「<strong>1つの文書を、人間にも機械にも読ませる</strong>」こと。現在は同じ目的が <a href="#formats">JSON-LD(schema.org)</a> や microdata に受け継がれ、SEOの構造化データとして使われています。</dd>
+
+  <dt>Atom — 更新情報を表すXMLフォーマット(フィード)</dt>
+  <dd>ブログやニュースの「更新一覧」を表す<strong>XMLベースの標準フォーマット</strong>(RFC 4287)。<code>&lt;feed&gt;</code> の中に複数の <code>&lt;entry&gt;</code> が並び、各エントリはタイトル・著者・更新日時・ID・リンク・本文といった<strong>決まったメタデータ</strong>を持ちます。乱立していたRSSを整理・一般化した後継で、ブログに限らず「日時付きの項目の一覧」全般に使えます。</dd>
+
+  <dt>Atom Publishing Protocol(AtomPub)— Atom項目を操作するプロトコル</dt>
+  <dd><strong>フォーマットではなくプロトコル</strong>。Atom文書を表現として使い、<strong>HTTPのメソッド(GETで一覧、POSTで作成、PUT/DELETEで編集)でリソースをCRUD操作</strong>する手順を定めました(RFC 5023)。ブログ投稿ツールやCMSの裏側で使われ、<strong>「HTTPを素直に使うREST的なAPI」の先駆け</strong>でした。現在は同じ発想が<a href="rest.html">REST</a>+JSONのWeb APIに受け継がれ、AtomPub自体の利用は下火です。→ <a href="api-design.html">API設計</a></dd>
+
+  <dt>JSON — 現代のWeb APIの主役(機械向け)</dt>
+  <dd>オブジェクト(名前と値の組)と配列だけの<strong>軽量なデータ形式</strong>(RFC 8259)。プログラムのデータ構造にそのまま対応し、解析も簡単なため、<a href="ajax.html">Web API</a>の表現として標準の座に就きました。<strong>それ自体にはリンクを表す決まりがない</strong>点がHTMLやAtomとの大きな違いで、ハイパーメディア的に使うときは HAL や JSON:API、JSON-LD といった<strong>「リンクの載せ方の規約」を追加</strong>します。</dd>
+</dl>
+
+<p class="code-caption">Atom(フィード)の例 — feedの中にentryが並ぶXML</p>
+<pre><code>&lt;feed xmlns="http://www.w3.org/2005/Atom"&gt;
+  &lt;title&gt;Web学習サイト 更新情報&lt;/title&gt;
+  &lt;updated&gt;2026-08-01T10:00:00Z&lt;/updated&gt;
+  &lt;entry&gt;
+    &lt;title&gt;Content-Dispositionの記事を追加&lt;/title&gt;
+    &lt;link href="https://example.com/articles/42"/&gt;
+    &lt;id&gt;urn:uuid:1225c695-...&lt;/id&gt;
+    &lt;updated&gt;2026-08-01T10:00:00Z&lt;/updated&gt;
+    &lt;summary&gt;ファイルダウンロードの仕組みを解説&lt;/summary&gt;
+  &lt;/entry&gt;
+&lt;/feed&gt;</code></pre>
+
+<div class="analogy">
+<p><strong>2本の軸で整理すると迷いません。</strong><br>
+・<strong>人間向け ↔ 機械向け</strong>: HTML(人間)⇔ JSON(機械)。microformats は「人間向けHTMLに機械向けの意味を同居」させる橋渡し、Atom はその中間(機械向けだが構造が決まっている)。<br>
+・<strong>フォーマット ↔ プロトコル</strong>: HTML・microformats・Atom・JSON は<strong>表現(名詞)</strong>、AtomPub だけは<strong>操作の手順(動詞)</strong>。</p>
+</div>
+
+<div class="modern">
+<p><strong>歴史の流れ。</strong>
+2000年代は <strong>XML・Atom・AtomPub</strong> が「機械向けWeb」の主役でした。
+その後、記述が軽くプログラムと相性のよい <strong>JSON + REST</strong> が主流になり、
+AtomPub の「HTTPメソッドでリソースを操作する」という発想は<a href="rest.html">REST API</a>にそのまま受け継がれました。
+microformats の「人間と機械が同じ文書を読む」発想は <a href="#formats">JSON-LD / schema.org</a> へ。
+<strong>フォーマットの主役は交代しても、背後の考え方は連続している</strong>——これがこの分野の読み方です。</p>
+</div>
 </section>
 
 <section id="modern-html">

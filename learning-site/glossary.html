@@ -198,6 +198,18 @@
   <dt>HTTP/3</dt>
   <dd>2022年に標準化された最新版。土台の通信方式をTCPからQUIC(UDPベース)に替えてさらに高速化した。これも「意味の部分」はHTTP/1.1から不変。→ <a href="http.html">HTTP</a></dd>
 
+  <dt>持続的接続 / keep-alive</dt>
+  <dd>1本のTCP接続を開いたまま、複数のリクエスト/レスポンスを続けてやりとりする方式。接続の開け閉めを減らして高速化する。HTTP/1.1で既定になった。→ <a href="http.html#connections">HTTP:持続的接続</a></dd>
+
+  <dt>パイプライン(pipelining)</dt>
+  <dd>1本の接続で、前のレスポンスを待たずにリクエストを連続送信する仕組み。ただしレスポンスは送信順に返す必要があり(先頭詰まり)、実装も不安定なため、ブラウザでは事実上使われない。→ <a href="http.html#connections">HTTP:持続的接続</a></dd>
+
+  <dt>多重化(multiplexing)</dt>
+  <dd>1本の接続の中で、多数のリクエスト/レスポンスを順不同で同時にやりとりする方式。HTTP/2で導入され、パイプラインの「先頭詰まり」を解消した。HTTP/1.1が複数接続で並列化していたのを1接続に統合した形。→ <a href="http.html#connections">HTTP:持続的接続</a></dd>
+
+  <dt>Content-Disposition</dt>
+  <dd>ボディを画面に表示(inline)するか、ファイルとして保存(attachment)させるかを指示するレスポンスヘッダ。保存名も指定でき、日本語名は <code>filename*=UTF-8''…</code> の%エンコーディングで正しく渡す。→ <a href="http.html#headers">HTTP:ヘッダ</a></dd>
+
   <dt>プロキシ(proxy)</dt>
   <dd>クライアントとサーバの通信を中継する機器。HTTPを理解して動くアプリケーション層の中継役で、リクエストを代理で送ったり、応答をキャッシュしたりする。エラー時は<strong>自分でHTTP応答を生成して返す</strong>ことがある。→ <a href="network-path.html">経路とエラー</a></dd>
 
@@ -275,6 +287,15 @@
 
   <dt>ハイパーリンク(hyperlink)</dt>
   <dd>ある情報から別の情報への参照。HTMLでは <code>&lt;a href="..."&gt;</code> で表し、行き先はURIで指定する。単に「リンク」とも。→ <a href="html.html">HTML</a></dd>
+
+  <dt>microformats(マイクロフォーマット)</dt>
+  <dd>独立した新形式ではなく、既存HTMLの <code>class</code> 属性に決まった名前を付けて機械可読な意味を埋め込む規約(例: <code>h-card</code>)。「人間と機械が同じ文書を読む」狙い。現在は同じ目的がJSON-LD/schema.orgに継承。→ <a href="html.html#hypermedia-formats">HTML:フォーマット総覧</a></dd>
+
+  <dt>Atom</dt>
+  <dd>ブログやニュースの更新一覧(フィード)を表すXMLベースの標準フォーマット(RFC 4287)。<code>feed</code> の中に <code>entry</code> が並び、各項目が更新日時・著者・リンクなどのメタデータを持つ。RSSを整理・一般化した後継。→ <a href="html.html#hypermedia-formats">HTML:フォーマット総覧</a></dd>
+
+  <dt>Atom Publishing Protocol(AtomPub)</dt>
+  <dd>フォーマットではなく<strong>プロトコル</strong>。Atom文書を表現に使い、HTTPのメソッド(GET/POST/PUT/DELETE)でリソースをCRUD操作する手順を定めた(RFC 5023)。REST的なAPIの先駆で、発想は現代のREST+JSON APIに継承。→ <a href="html.html#hypermedia-formats">HTML:フォーマット総覧</a> / <a href="rest.html">REST</a></dd>
 </dl>
 </section>
 
