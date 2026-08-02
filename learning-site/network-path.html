@@ -84,7 +84,7 @@ Webのアクセスは、あなたのブラウザとサーバが直接つなが�
   <li><span class="flow-title">フォワードプロキシ(例: Squid)</span>
     <span class="flow-desc">組織の「外部への出口」。誰がどこへアクセスしてよいかを<strong>ACL(アクセス制御リスト)</strong>で判断し、許可された通信だけを外へ中継する。ログ取得やキャッシュも担う。<a href="http.html#status">HTTP</a>を理解して動く<strong>アプリケーション層</strong>の機器。</span></li>
   <li><span class="flow-title">ファイアウォール / ルータ</span>
-    <span class="flow-desc">パケット(通信の小包)単位で通す・通さないを判断する<strong>ネットワーク層(L3/L4)</strong>の機器。基本はIPアドレスやポート番号を見るだけで、<strong>HTTPの中身は見ない</strong>。ただし最近の「次世代ファイアウォール」やWAFはアプリケーション層まで見る。</span></li>
+    <span class="flow-desc">パケット(通信の小包)単位で通す・通さないを判断する<strong>L3/L4(IPアドレスとポートの層)</strong>の機器。基本はIPアドレスやポート番号を見るだけで、<strong>HTTPの中身は見ない</strong>。ただし最近の「次世代ファイアウォール」やWAFはアプリケーション層まで見る。</span></li>
   <li><span class="flow-title">ゲートウェイ / ロードバランサ(サーバ側)</span>
     <span class="flow-desc">目的のサーバの手前で受け付ける中継役。上流(本当のサーバ)に取り次ぐ。上流に届かなければ、<strong>自分でエラーを生成して返す</strong>。</span></li>
   <li><span class="flow-title">オリジンサーバ</span>
@@ -317,8 +317,8 @@ FW側は「サービスを提供できなかった」(=応える側の事情と�
 </section>
 
 <nav class="page-nav">
-  <a class="prev" href="http.html#status"><span class="nav-dir">戻る</span>HTTP — ステータスコードの章へ</a>
-  <a class="next" href="glossary.html"><span class="nav-dir">次のページ</span>用語集</a>
+  <a class="prev" href="api-design.html"><span class="nav-dir">前のページ</span>API設計 — Web APIを設計する</a>
+  <a class="next" href="devtools.html"><span class="nav-dir">次のページ</span>DevTools — ブラウザ開発者ツール</a>
 </nav>
 
 </main>

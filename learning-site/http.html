@@ -331,7 +331,7 @@ SOAPやXML-RPCがその代表で、HTTPを「中身を問わず運ぶだけの�
     <tr><td>304</td><td>Not Modified</td><td>「前回から変わっていない」。キャッシュと組で使う(後述)。</td></tr>
     <tr><td>400</td><td>Bad Request</td><td>リクエストの形式が不正。パラメータ間違いなど。</td></tr>
     <tr><td>401</td><td>Unauthorized</td><td>認証が必要(名乗っていない/認証に失敗)。</td></tr>
-    <tr><td>403</td><td>Forbidden</td><td>認証はされたが権限がなく禁止。</td></tr>
+    <tr><td>403</td><td>Forbidden</td><td>認可の拒否(権限・ポリシーで禁止)。認証し直しても解決しない点が401と違う。プロキシがACLで通信を拒否するときの応答もこれ(→ <a href="network-path.html">経路とエラー</a>)。</td></tr>
     <tr><td>404</td><td>Not Found</td><td>リソースが存在しない。いちばん有名なコード。</td></tr>
     <tr><td>500</td><td>Internal Server Error</td><td>サーバ内部の異常。プログラムのバグなど。</td></tr>
     <tr><td>503</td><td>Service Unavailable</td><td>一時的に応答不能。メンテナンス中やアクセス集中。</td></tr>

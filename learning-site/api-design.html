@@ -345,7 +345,7 @@ Location: https://api.example.com/books/42/reviews/8
     <tr>
       <td><code>403</code></td>
       <td>Forbidden</td>
-      <td>認証済みだが権限がない(誰かは分かるがダメ)</td>
+      <td>認可の拒否。認証済みでも権限がなければ返る(誰かは分かるがダメ)</td>
       <td>他人のレビューを削除しようとした</td>
     </tr>
     <tr>
@@ -543,7 +543,7 @@ paths:
 
 <nav class="page-nav">
   <a class="prev" href="ajax.html"><span class="nav-dir">前のページ</span>Ajax — JavaScriptがHTTPを使う仕組み</a>
-  <a class="next" href="glossary.html"><span class="nav-dir">次のページ</span>用語集</a>
+  <a class="next" href="network-path.html"><span class="nav-dir">次のページ</span>経路とエラー(実作業編)</a>
 </nav>
 
 </main>

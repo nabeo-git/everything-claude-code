@@ -71,7 +71,7 @@ Windows(PowerShell + 従来コマンド)と Linux の両方で、<strong>レイ�
   <div class="layer hl">
     <span class="layer-role">アプリケーション(L7)</span>
     <span class="layer-tech">HTTP / TLS</span>
-    <span class="layer-desc">実際のHTTPのやりとりと暗号化。<code>curl</code> / <code>Invoke-WebRequest</code> / <code>openssl s_client</code>。→ <a href="#http">HTTP節</a> / <a href="#tls">TLS節</a></span>
+    <span class="layer-desc">実際のHTTPのやりとり(L7)と、その手前の暗号化TLS(TCPとHTTPの間)。<code>curl</code> / <code>Invoke-WebRequest</code> / <code>openssl s_client</code>。→ <a href="#http">HTTP節</a> / <a href="#tls">TLS節</a></span>
   </div>
   <div class="layer">
     <span class="layer-role">名前解決</span>
@@ -93,6 +93,10 @@ Windows(PowerShell + 従来コマンド)と Linux の両方で、<strong>レイ�
     <span class="layer-tech">イーサネット / Wi-Fi</span>
     <span class="layer-desc">自分のIP設定・経路・隣接機器。<code>ipconfig</code> / <code>ip addr</code> / <code>arp</code>。</span>
   </div>
+</div>
+
+<div class="note">
+<p>この積み上げは、<a href="http.html#layers">HTTPのページで扱うTCP/IPの4層</a>に、OSIの層番号(L1〜L7)を振って切り分けの順に並べ直したものです。<strong>同じインターネットの土台を、診断の粒度で見ている</strong>だけで、別のネットワークがあるわけではありません。トップページの地図では、このスタック全体が「基盤(TCP/IP・DNS・TLS)」の1ボックスに畳まれています。</p>
 </div>
 
 <h3>Windows ↔ Linux 対応表(早見表)</h3>

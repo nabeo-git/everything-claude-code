@@ -96,7 +96,7 @@ DevTools は複数の<strong>パネル(タブ)</strong>に分かれていて、�
   <tbody>
     <tr><td><a href="#elements">Elements(要素)</a></td><td>表現層(DOM / CSS)</td><td>描画後のHTML構造と適用CSS</td><td>表示が崩れる・意図した見た目にならない</td></tr>
     <tr><td><a href="#console">Console(コンソール)</a></td><td>JavaScript</td><td>スクリプトのエラー・ログ・実行</td><td>ページが動かない・JSエラーを読みたい</td></tr>
-    <tr><td><a href="#network">Network(ネットワーク)</a></td><td>転送層(HTTP)</td><td>全リクエスト/レスポンス・状態・時間</td><td>通信が失敗する・遅い・APIの中身を見たい</td></tr>
+    <tr><td><a href="#network">Network(ネットワーク)</a></td><td>アプリケーション層(HTTP)</td><td>全リクエスト/レスポンス・状態・時間</td><td>通信が失敗する・遅い・APIの中身を見たい</td></tr>
     <tr><td><a href="#performance">Performance</a></td><td>読み込み・描画</td><td>処理のタイムライン</td><td>ページが重い・原因を特定したい</td></tr>
     <tr><td><a href="#application">Application</a></td><td>状態・保存(Cookie等)</td><td>Cookie・ストレージ・キャッシュ</td><td>ログイン状態・保存データを確認したい</td></tr>
     <tr><td><a href="#security">Security</a></td><td>暗号化(TLS/証明書)</td><td>HTTPSの証明書・混在コンテンツ</td><td>「保護されていない通信」の原因を見たい</td></tr>
@@ -147,10 +147,10 @@ DevTools は複数の<strong>パネル(タブ)</strong>に分かれていて、�
 </section>
 
 <section id="network">
-<h2>Network(ネットワーク)— 転送層:HTTPのやりとりを丸ごと見る</h2>
+<h2>Network(ネットワーク)— アプリケーション層:HTTPのやりとりを丸ごと見る</h2>
 
 <p>
-<strong>対象レイヤ:</strong> <a href="http.html">転送層(HTTP)</a>。
+<strong>対象レイヤ:</strong> <a href="http.html">アプリケーション層(HTTP)</a>。
 <strong>何を見る:</strong> ページを開いてから発生した<strong>すべてのHTTPリクエスト/レスポンス</strong>を一覧で。
 1件を選べば、メソッド・URL・<a href="http.html#status">ステータスコード</a>・<a href="http.html#headers">ヘッダ</a>・送受信ボディ・かかった時間まで、
 <a href="http.html">HTTPのページ</a>で学んだ「生のメッセージ」がそのまま見られます。
@@ -300,7 +300,7 @@ DevTools のパネルは、本サイトが繰り返し使ってきた<strong>層
 </section>
 
 <nav class="page-nav">
-  <a class="prev" href="http.html"><span class="nav-dir">前のページ</span>HTTP — Webの配送プロトコル</a>
+  <a class="prev" href="network-path.html"><span class="nav-dir">前のページ</span>経路とエラー(実作業編)</a>
   <a class="next" href="cli-tools.html"><span class="nav-dir">次のページ</span>CLI診断ツール — Windows と Linux</a>
 </nav>
 
